@@ -1,0 +1,1360 @@
+/* ============================================================================
+   Y2K / 千禧年探针主题
+   ----------------------------------------------------------------------------
+   A design system built out of the vocabulary of 1999-2003 interface culture:
+   chrome bevels, Aqua-style glass, neon tube glow, starfield and perspective
+   grid backdrops, CRT scanlines, segmented LED meters, and window chrome with
+   a title bar. Everything is drawn with gradients, box-shadow and pseudo
+   elements -- no images, so the whole theme stays a few tens of kilobytes.
+   ========================================================================= */
+
+/* ---------------------------------------------------------------- tokens -- */
+
+:root {
+  /* Type. No web font is loaded: the hub serves the theme from wherever it is
+     installed, possibly without egress, and a 1999 UI is mostly distinguishable
+     by its bevels rather than its letterforms. The stacks fall back to what the
+     OS ships. */
+  --font-ui: "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
+  --font-data: "SF Mono", "Menlo", "Consolas", "DejaVu Sans Mono", ui-monospace, monospace;
+  --font-display: "Trebuchet MS", "PingFang SC", "Microsoft YaHei", var(--font-ui);
+
+  --r-sm: 4px;
+  --r-md: 7px;
+  --r-lg: 12px;
+  --r-pill: 999px;
+
+  --dur: 180ms;
+  --ease: cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+
+/* Four skins. Each one only swaps the palette: every rule below reads these.
+   Aqua is also bound to `:root`, not just to `[data-skin="aqua"]`, because
+   `body` sits outside the element carrying the attribute -- without the root
+   binding the page background, the backdrop and the settings drawer would all
+   resolve their colours to nothing. */
+:root,
+[data-skin="aqua"] {
+  --bg-0: #050a1e;
+  --bg-1: #0b1f4a;
+  --bg-2: #123a6e;
+  --panel: rgba(10, 30, 66, 0.72);
+  --panel-solid: #0d2450;
+  --panel-2: rgba(24, 62, 118, 0.55);
+  --edge-hi: rgba(255, 255, 255, 0.55);
+  --edge-lo: rgba(0, 0, 0, 0.55);
+  --ink: #eaf6ff;
+  --ink-dim: #93b8dd;
+  --ink-faint: #5d80ab;
+  --accent: #4fd2ff;
+  --accent-2: #7b6cff;
+  --accent-3: #b6f2ff;
+  --glow: 0 0 12px rgba(79, 210, 255, 0.65);
+  --ok: #45f0a8;
+  --warn: #ffc44d;
+  --bad: #ff5f7e;
+  --chrome-a: #dff3ff;
+  --chrome-b: #8fb6d8;
+  --chrome-c: #4a6c93;
+}
+
+[data-skin="chrome"] {
+  --bg-0: #0a0a10;
+  --bg-1: #1b1d29;
+  --bg-2: #343a4e;
+  --panel: rgba(28, 31, 43, 0.76);
+  --panel-solid: #22252f;
+  --panel-2: rgba(58, 64, 82, 0.6);
+  --edge-hi: rgba(255, 255, 255, 0.7);
+  --edge-lo: rgba(0, 0, 0, 0.7);
+  --ink: #f4f6fb;
+  --ink-dim: #a8b0c4;
+  --ink-faint: #6d7488;
+  --accent: #cdd6ea;
+  --accent-2: #8fa4c8;
+  --accent-3: #ffffff;
+  --glow: 0 0 12px rgba(205, 214, 234, 0.5);
+  --ok: #7de2b0;
+  --warn: #f0cf7a;
+  --bad: #f28a9c;
+  --chrome-a: #ffffff;
+  --chrome-b: #aab4c8;
+  --chrome-c: #5b6273;
+}
+
+[data-skin="vapor"] {
+  --bg-0: #14042c;
+  --bg-1: #3a0a5e;
+  --bg-2: #7a1a7e;
+  --panel: rgba(46, 12, 78, 0.7);
+  --panel-solid: #2c0a4e;
+  --panel-2: rgba(96, 28, 128, 0.5);
+  --edge-hi: rgba(255, 214, 255, 0.6);
+  --edge-lo: rgba(20, 0, 40, 0.6);
+  --ink: #ffeaff;
+  --ink-dim: #d9a6e8;
+  --ink-faint: #a06bb8;
+  --accent: #ff6ad5;
+  --accent-2: #4de2ff;
+  --accent-3: #ffe66d;
+  --glow: 0 0 12px rgba(255, 106, 213, 0.7);
+  --ok: #6dffc0;
+  --warn: #ffe66d;
+  --bad: #ff5a86;
+  --chrome-a: #ffe9ff;
+  --chrome-b: #d18ae0;
+  --chrome-c: #7a3a92;
+}
+
+[data-skin="matrix"] {
+  --bg-0: #000a04;
+  --bg-1: #02170c;
+  --bg-2: #04371c;
+  --panel: rgba(2, 26, 14, 0.76);
+  --panel-solid: #04220f;
+  --panel-2: rgba(6, 54, 28, 0.55);
+  --edge-hi: rgba(190, 255, 214, 0.45);
+  --edge-lo: rgba(0, 0, 0, 0.7);
+  --ink: #d8ffe6;
+  --ink-dim: #7fd39c;
+  --ink-faint: #4b8a63;
+  --accent: #35ff8b;
+  --accent-2: #9dff5c;
+  --accent-3: #d6ffca;
+  --glow: 0 0 12px rgba(53, 255, 139, 0.6);
+  --ok: #35ff8b;
+  --warn: #ffe066;
+  --bad: #ff6b6b;
+  --chrome-a: #e6ffee;
+  --chrome-b: #79c295;
+  --chrome-c: #2f6a48;
+}
+
+/* ------------------------------------------------------------- base reset -- */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink);
+  background: var(--bg-0);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+/* The backdrop is one fixed layer behind everything, so it does not scroll with
+   the page and does not repaint as cards come and go. */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(120% 80% at 50% -10%, var(--bg-2) 0%, var(--bg-1) 38%, var(--bg-0) 78%),
+    var(--bg-0);
+}
+
+/* Starfield: three layers of radial-gradient dots at different densities and
+   sizes, drifting at different speeds so the field has parallax. */
+.backdrop[data-stars="on"]::before {
+  content: "";
+  position: absolute;
+  inset: -50% -50%;
+  background-image:
+    radial-gradient(1px 1px at 20px 30px, rgba(255, 255, 255, 0.9), transparent),
+    radial-gradient(1px 1px at 90px 120px, rgba(180, 220, 255, 0.7), transparent),
+    radial-gradient(1.5px 1.5px at 160px 60px, rgba(255, 255, 255, 0.85), transparent),
+    radial-gradient(1px 1px at 240px 190px, rgba(200, 230, 255, 0.6), transparent),
+    radial-gradient(2px 2px at 300px 90px, rgba(255, 255, 255, 0.5), transparent),
+    radial-gradient(1px 1px at 70px 220px, rgba(160, 200, 255, 0.65), transparent);
+  background-size: 340px 260px;
+  animation: drift 140s linear infinite;
+  opacity: 0.85;
+}
+
+.backdrop[data-stars="on"]::after {
+  content: "";
+  position: absolute;
+  inset: -50% -50%;
+  background-image:
+    radial-gradient(1px 1px at 12px 44px, rgba(255, 255, 255, 0.7), transparent),
+    radial-gradient(1px 1px at 130px 12px, rgba(255, 230, 255, 0.6), transparent),
+    radial-gradient(1.5px 1.5px at 200px 150px, rgba(255, 255, 255, 0.55), transparent);
+  background-size: 260px 200px;
+  animation: drift 90s linear infinite reverse;
+  opacity: 0.7;
+}
+
+@keyframes drift {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-340px, -260px, 0);
+  }
+}
+
+/* Perspective grid: the horizon line of every 1999 futurist interface. Named
+   `.pgrid` rather than `.grid`: the latter is the card layout below, and the
+   two must not be able to reach each other. */
+.backdrop[data-grid="on"] .pgrid {
+  position: absolute;
+  left: -25%;
+  right: -25%;
+  bottom: -10%;
+  height: 62%;
+  background-image:
+    linear-gradient(to right, color-mix(in srgb, var(--accent) 55%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, var(--accent) 45%, transparent) 1px, transparent 1px);
+  background-size: 64px 64px;
+  transform: perspective(320px) rotateX(62deg);
+  transform-origin: 50% 100%;
+  animation: scroll-grid 6s linear infinite;
+  opacity: 0.5;
+  mask-image: linear-gradient(to top, #000 0%, transparent 85%);
+  -webkit-mask-image: linear-gradient(to top, #000 0%, transparent 85%);
+}
+
+@keyframes scroll-grid {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 0 64px;
+  }
+}
+
+/* CRT: scanlines and a vignette. Both are pure overlays, so text stays crisp
+   underneath; the setting is there for operators who would rather read clean. */
+.crt {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  pointer-events: none;
+}
+
+.crt::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.16) 0px,
+    rgba(0, 0, 0, 0.16) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  opacity: 0.55;
+}
+
+.crt::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(120% 100% at 50% 50%, transparent 55%, rgba(0, 0, 0, 0.55) 100%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .backdrop::before,
+  .backdrop::after,
+  .backdrop .pgrid {
+    animation: none;
+  }
+}
+
+/* ------------------------------------------------------------- primitives -- */
+
+/* The bevel. A 1999 panel is defined by a light top-left edge and a dark
+   bottom-right one; inset shadows do it without extra elements. */
+.bevel {
+  border: 1px solid var(--edge-lo);
+  box-shadow:
+    inset 1px 1px 0 var(--edge-hi),
+    inset -1px -1px 0 var(--edge-lo),
+    0 6px 20px rgba(0, 0, 0, 0.45);
+}
+
+/* The glass slab every card is cut from. */
+.panel {
+  position: relative;
+  border-radius: var(--r-lg);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--panel-2) 100%, transparent) 0%, transparent 42%),
+    var(--panel);
+  border: 1px solid color-mix(in srgb, var(--accent) 26%, transparent);
+  box-shadow:
+    inset 0 1px 0 var(--edge-hi),
+    inset 0 -1px 0 var(--edge-lo),
+    0 10px 28px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(9px) saturate(135%);
+  -webkit-backdrop-filter: blur(9px) saturate(135%);
+}
+
+/* The mirror highlight along the top of a glass slab. */
+.panel[data-glass="on"]::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 42%;
+  border-radius: var(--r-lg) var(--r-lg) 40% 40% / var(--r-lg) var(--r-lg) 14px 14px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.02) 70%, transparent);
+  pointer-events: none;
+}
+
+/* Chrome text: the beveled metallic lettering of a 1999 logo. */
+.chrome-text {
+  background: linear-gradient(
+    180deg,
+    var(--chrome-a) 0%,
+    var(--chrome-b) 42%,
+    var(--chrome-c) 52%,
+    var(--chrome-b) 62%,
+    var(--chrome-a) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.55)) drop-shadow(0 0 10px color-mix(in srgb, var(--accent) 45%, transparent));
+}
+
+.faint {
+  color: var(--ink-faint);
+}
+
+/* --------------------------------------------------------------- buttons -- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 5px 12px;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+  border-radius: var(--r-pill);
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 30%, transparent), rgba(0, 0, 0, 0.28));
+  box-shadow:
+    inset 0 1px 0 var(--edge-hi),
+    inset 0 -1px 0 var(--edge-lo),
+    0 2px 6px rgba(0, 0, 0, 0.4);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.6);
+  transition: filter var(--dur) var(--ease), transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+  white-space: nowrap;
+}
+
+.btn:hover {
+  filter: brightness(1.25);
+  box-shadow:
+    inset 0 1px 0 var(--edge-hi),
+    inset 0 -1px 0 var(--edge-lo),
+    0 0 14px color-mix(in srgb, var(--accent) 55%, transparent);
+}
+
+.btn:active {
+  transform: translateY(1px);
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.6);
+}
+
+.btn:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--accent-3);
+  outline-offset: 2px;
+}
+
+.btn[data-on="true"] {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 78%, transparent), color-mix(in srgb, var(--accent-2) 55%, transparent));
+  color: #04121f;
+  text-shadow: none;
+  border-color: var(--accent-3);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.75),
+    0 0 16px color-mix(in srgb, var(--accent) 70%, transparent);
+}
+
+/* An anchor wearing .btn: the admin link. It must not inherit the underline and
+   colour of a text link, and it has to line up with the real buttons beside it. */
+a.btn {
+  text-decoration: none;
+}
+
+/* ---------------------------------------------------------------- window -- */
+
+/* The page's outer frame: a title bar with three fake buttons, as every window
+   of the era had. */
+.window {
+  position: relative;
+  z-index: 1;
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: 14px 16px 64px;
+}
+
+.titlebar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px;
+  border-radius: var(--r-md) var(--r-md) 0 0;
+  background: linear-gradient(180deg, var(--bg-2), var(--bg-1) 55%, color-mix(in srgb, var(--bg-0) 85%, #000));
+  border: 1px solid color-mix(in srgb, var(--accent) 34%, transparent);
+  border-bottom: none;
+  box-shadow: inset 0 1px 0 var(--edge-hi);
+}
+
+.titlebar .dots {
+  display: flex;
+  gap: 5px;
+  flex: none;
+}
+
+.titlebar .dots i {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.6), inset 0 -1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.titlebar .dots i:nth-child(1) {
+  background: linear-gradient(180deg, #ffd0d0, #e0503f);
+}
+.titlebar .dots i:nth-child(2) {
+  background: linear-gradient(180deg, #ffeec0, #e0a020);
+}
+.titlebar .dots i:nth-child(3) {
+  background: linear-gradient(180deg, #c8f5d0, #2f9e4f);
+}
+
+.titlebar .path {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-data);
+  font-size: 11px;
+  color: var(--ink-dim);
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.window-body {
+  border-radius: 0 0 var(--r-md) var(--r-md);
+  border: 1px solid color-mix(in srgb, var(--accent) 34%, transparent);
+  border-top: none;
+  background: var(--panel);
+  backdrop-filter: blur(9px) saturate(135%);
+  -webkit-backdrop-filter: blur(9px) saturate(135%);
+  box-shadow:
+    inset 0 1px 0 var(--edge-hi),
+    0 18px 50px rgba(0, 0, 0, 0.55);
+  padding: 16px;
+}
+
+/* ------------------------------------------------------------------ head -- */
+
+.masthead {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-bottom: 12px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.brand h1 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(22px, 3.4vw, 38px);
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  line-height: 1.1;
+}
+
+.brand .tagline {
+  margin: 2px 0 0;
+  font-family: var(--font-data);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.brand img,
+.brand .mark {
+  width: 42px;
+  height: 42px;
+  flex: none;
+  filter: drop-shadow(0 0 8px color-mix(in srgb, var(--accent) 60%, transparent));
+}
+
+.head-tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ---------------------------------------------------------------- notice -- */
+
+/* The marquee: the single most Y2K element there is. It only scrolls when the
+   text is wider than the frame, and pauses on hover so it can be read. */
+.notice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 14px;
+  padding: 7px 10px;
+  border-radius: var(--r-pill);
+  border: 1px solid color-mix(in srgb, var(--warn) 45%, transparent);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--warn) 18%, transparent), rgba(0, 0, 0, 0.3));
+  box-shadow: inset 0 1px 0 var(--edge-hi), 0 0 18px color-mix(in srgb, var(--warn) 22%, transparent);
+  overflow: hidden;
+}
+
+.notice .lamp {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--warn);
+  box-shadow: 0 0 9px var(--warn);
+  animation: blink 1.6s steps(1, end) infinite;
+}
+
+@keyframes blink {
+  0%,
+  55% {
+    opacity: 1;
+  }
+  56%,
+  100% {
+    opacity: 0.25;
+  }
+}
+
+.notice .frame {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  mask-image: linear-gradient(to right, transparent, #000 18px, #000 calc(100% - 18px), transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 18px, #000 calc(100% - 18px), transparent);
+}
+
+/* Two identical copies scroll past; the loop is seamless only if the travel is
+   exactly one copy's width, so the gap between them is padding *inside* each copy
+   rather than a `gap` on the flex row. With `gap`, the row's width is 2a + g and
+   -50% travels a + g/2, which lands the second copy half a gap out of place and
+   makes the text jump every cycle. With padding, the row is 2(a + g) and -50% is
+   exactly a + g. A notice short enough to fit is not rolled at all -- see
+   `Notice` -- so its copy carries no trailing padding either. */
+.notice .roll {
+  display: inline-flex;
+  white-space: nowrap;
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.notice .roll[data-rolling="true"] {
+  animation: roll 26s linear infinite;
+}
+
+.notice .roll[data-rolling="true"] > span {
+  padding-right: 64px;
+}
+
+.notice:hover .roll {
+  animation-play-state: paused;
+}
+
+@keyframes roll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* ---------------------------------------------------------------- summary -- */
+
+.summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.stat {
+  position: relative;
+  padding: 10px 12px 11px;
+  border-radius: var(--r-md);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 12%, transparent), rgba(0, 0, 0, 0.26));
+  border: 1px solid color-mix(in srgb, var(--accent) 26%, transparent);
+  box-shadow: inset 0 1px 0 var(--edge-hi), inset 0 -1px 0 var(--edge-lo);
+  overflow: hidden;
+}
+
+.stat .k {
+  font-family: var(--font-data);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.stat .v {
+  margin-top: 3px;
+  font-family: var(--font-data);
+  font-size: 19px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 10px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.stat .sub {
+  font-size: 11px;
+  color: var(--ink-dim);
+}
+
+/* The sparkline behind a summary tile, drawn from the live speed samples. */
+.stat svg {
+  position: absolute;
+  inset: auto 0 0 0;
+  width: 100%;
+  height: 26px;
+  opacity: 0.75;
+  pointer-events: none;
+}
+
+/* ------------------------------------------------------------------- tabs -- */
+
+.tabs {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+/* Group names are arbitrary text and there may be dozens, so the row wraps
+   rather than hiding any of them. */
+.tab {
+  padding: 4px 12px;
+  border-radius: var(--r-pill);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-dim);
+  cursor: pointer;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(0, 0, 0, 0.25));
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
+  box-shadow: inset 0 1px 0 var(--edge-hi);
+  transition: color var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+}
+
+.tab:hover {
+  color: var(--ink);
+}
+
+.tab[data-on="true"] {
+  color: #04121f;
+  background: linear-gradient(180deg, var(--accent-3), var(--accent));
+  border-color: var(--accent-3);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--accent) 65%, transparent);
+  text-shadow: none;
+}
+
+/* ------------------------------------------------------------------ cards -- */
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr));
+  gap: 14px;
+}
+
+@media (max-width: 1100px) {
+  .grid {
+    grid-template-columns: repeat(min(var(--cols, 3), 2), minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 680px) {
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 12px;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  transition: transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--accent) 62%, transparent);
+  box-shadow:
+    inset 0 1px 0 var(--edge-hi),
+    0 0 22px color-mix(in srgb, var(--accent) 32%, transparent),
+    0 14px 32px rgba(0, 0, 0, 0.55);
+}
+
+.card[data-offline="true"] {
+  filter: saturate(0.5);
+}
+
+.card-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.card-head .name {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The status lamp: a chrome-ringed LED. */
+.lamp {
+  flex: none;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.55);
+  background: radial-gradient(circle at 35% 30%, #fff8, transparent 55%), var(--bad);
+  box-shadow: 0 0 8px var(--bad), inset 0 0 3px rgba(0, 0, 0, 0.6);
+}
+
+.lamp[data-on="true"] {
+  background: radial-gradient(circle at 35% 30%, #fff8, transparent 55%), var(--ok);
+  box-shadow: 0 0 10px var(--ok), inset 0 0 3px rgba(0, 0, 0, 0.6);
+  animation: pulse 2.4s var(--ease) infinite;
+}
+
+/* Connected but not yet reporting: amber, and still. Green would promise figures
+   that are not there yet, red would call a live agent down. */
+.lamp[data-pending="true"] {
+  background: radial-gradient(circle at 35% 30%, #fff8, transparent 55%), var(--warn);
+  box-shadow: 0 0 9px var(--warn), inset 0 0 3px rgba(0, 0, 0, 0.6);
+  animation: none;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 8px var(--ok), inset 0 0 3px rgba(0, 0, 0, 0.6);
+  }
+  50% {
+    box-shadow: 0 0 16px var(--ok), inset 0 0 3px rgba(0, 0, 0, 0.6);
+  }
+}
+
+/* The little grey plate carrying the OS / arch line. */
+.plate {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 4px 7px;
+  border-radius: var(--r-sm);
+  font-family: var(--font-data);
+  font-size: 10.5px;
+  color: var(--ink-dim);
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--edge-lo);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.09);
+}
+
+.plate .sep {
+  color: var(--ink-faint);
+}
+
+.remark {
+  margin: 0;
+  font-size: 11.5px;
+  color: var(--ink-dim);
+  overflow-wrap: anywhere;
+}
+
+/* --------------------------------------------------------------- meters --- */
+
+.meters {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.meter {
+  display: grid;
+  grid-template-columns: 34px 1fr auto;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+}
+
+.meter .label {
+  font-family: var(--font-data);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.meter .val {
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-dim);
+  white-space: nowrap;
+}
+
+/* The trough: a recessed channel the segments sit in. */
+.trough {
+  position: relative;
+  height: 11px;
+  border-radius: var(--r-pill);
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid var(--edge-lo);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.7), inset 0 -1px 0 rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+/* The fill, with the glass highlight of a 1999 progress bar. */
+.trough .fill {
+  position: absolute;
+  inset: 1px auto 1px 1px;
+  border-radius: var(--r-pill);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent-3) 80%, #fff), var(--accent) 55%, color-mix(in srgb, var(--accent) 60%, #000));
+  box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 75%, transparent);
+  transition: width 600ms var(--ease), background 300ms var(--ease);
+}
+
+.trough[data-level="warn"] .fill {
+  background: linear-gradient(180deg, #ffe9a8, var(--warn) 55%, #8a5a00);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--warn) 75%, transparent);
+}
+
+.trough[data-level="bad"] .fill {
+  background: linear-gradient(180deg, #ffc2cd, var(--bad) 55%, #8a1030);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--bad) 80%, transparent);
+}
+
+/* The segmented LED look: a repeating mask cuts the fill into cells, and the
+   same cell size is carried by a set of unlit tracks behind it. */
+.trough .cells {
+  position: absolute;
+  inset: 1px;
+  border-radius: var(--r-pill);
+  background-image: repeating-linear-gradient(
+    to right,
+    transparent 0,
+    transparent 5px,
+    rgba(0, 0, 0, 0.55) 5px,
+    rgba(0, 0, 0, 0.55) 7px
+  );
+  pointer-events: none;
+}
+
+/* --------------------------------------------------------------- footer --- */
+
+.card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-top: 8px;
+  margin-top: auto;
+  border-top: 1px dashed color-mix(in srgb, var(--accent) 24%, transparent);
+  font-family: var(--font-data);
+  font-size: 11px;
+  color: var(--ink-dim);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: var(--r-pill);
+  font-size: 10.5px;
+  font-weight: 600;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid color-mix(in srgb, var(--accent) 26%, transparent);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.badge[data-tone="ok"] {
+  color: var(--ok);
+  border-color: color-mix(in srgb, var(--ok) 50%, transparent);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 0 10px color-mix(in srgb, var(--ok) 30%, transparent);
+}
+
+.badge[data-tone="warn"] {
+  color: var(--warn);
+  border-color: color-mix(in srgb, var(--warn) 50%, transparent);
+}
+
+.badge[data-tone="bad"] {
+  color: var(--bad);
+  border-color: color-mix(in srgb, var(--bad) 55%, transparent);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 0 10px color-mix(in srgb, var(--bad) 35%, transparent);
+}
+
+/* ---------------------------------------------------------------- table --- */
+
+.table-wrap {
+  overflow-x: auto;
+  border-radius: var(--r-md);
+  border: 1px solid color-mix(in srgb, var(--accent) 26%, transparent);
+}
+
+table.nodes {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+
+table.nodes th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 8px 10px;
+  text-align: left;
+  font-family: var(--font-data);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  background: linear-gradient(180deg, var(--bg-2), var(--bg-1));
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+  box-shadow: inset 0 1px 0 var(--edge-hi);
+  white-space: nowrap;
+}
+
+table.nodes td {
+  padding: 7px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+table.nodes tbody tr {
+  cursor: pointer;
+  transition: background var(--dur) var(--ease);
+}
+
+table.nodes tbody tr:nth-child(odd) {
+  background: rgba(255, 255, 255, 0.022);
+}
+
+table.nodes tbody tr:hover {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
+table.nodes .trough {
+  width: 90px;
+  height: 9px;
+}
+
+/* --------------------------------------------------------------- detail --- */
+
+.detail-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.detail-head h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.specs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.spec {
+  padding: 8px 10px;
+  border-radius: var(--r-sm);
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid var(--edge-lo);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.09);
+  min-width: 0;
+}
+
+.spec .k {
+  font-family: var(--font-data);
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.spec .v {
+  font-family: var(--font-data);
+  font-size: 12.5px;
+  overflow-wrap: anywhere;
+}
+
+.charts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 14px;
+}
+
+.chart {
+  padding: 10px 12px 6px;
+}
+
+.chart h3 {
+  margin: 0 0 6px;
+  font-family: var(--font-data);
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: baseline;
+}
+
+.chart .peak {
+  color: var(--ink-faint);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.chart svg {
+  display: block;
+  width: 100%;
+  overflow: visible;
+}
+
+/* Chart furniture. */
+.axis-line {
+  stroke: color-mix(in srgb, var(--accent) 40%, transparent);
+  stroke-width: 1;
+}
+
+.grid-line {
+  stroke: color-mix(in srgb, var(--accent) 16%, transparent);
+  stroke-width: 1;
+  stroke-dasharray: 2 4;
+}
+
+.tick-text {
+  fill: var(--ink-faint);
+  font-family: var(--font-data);
+  font-size: 9.5px;
+}
+
+.legend {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+  font-family: var(--font-data);
+  font-size: 10.5px;
+  color: var(--ink-dim);
+}
+
+.legend button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.legend button[data-off="true"] {
+  opacity: 0.4;
+  text-decoration: line-through;
+}
+
+.legend .swatch {
+  width: 12px;
+  height: 3px;
+  border-radius: 2px;
+  flex: none;
+}
+
+/* The crosshair readout on a chart. */
+.readout {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  min-height: 17px;
+  margin-top: 4px;
+  font-family: var(--font-data);
+  font-size: 10.5px;
+  color: var(--ink-dim);
+}
+
+/* ---------------------------------------------------------------- states -- */
+
+.skeleton {
+  border-radius: var(--r-lg);
+  height: 178px;
+  background: linear-gradient(100deg, rgba(255, 255, 255, 0.05) 30%, rgba(255, 255, 255, 0.13) 50%, rgba(255, 255, 255, 0.05) 70%);
+  background-size: 220% 100%;
+  animation: shimmer 1.4s linear infinite;
+  border: 1px solid color-mix(in srgb, var(--accent) 20%, transparent);
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 140% 0;
+  }
+  to {
+    background-position: -40% 0;
+  }
+}
+
+.banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: var(--r-md);
+  font-size: 13px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--bad) 20%, transparent), rgba(0, 0, 0, 0.3));
+  border: 1px solid color-mix(in srgb, var(--bad) 55%, transparent);
+  box-shadow: inset 0 1px 0 var(--edge-hi);
+}
+
+.empty {
+  padding: 48px 16px;
+  text-align: center;
+  color: var(--ink-dim);
+}
+
+/* ------------------------------------------------------------- settings --- */
+
+/* The theme's own settings drawer, offered to an authenticated operator: the
+   panel's form edits the same object, this one is for tuning while watching. */
+.drawer {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  justify-content: flex-end;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+
+.drawer .sheet {
+  width: min(430px, 100%);
+  height: 100%;
+  overflow-y: auto;
+  /* No bottom padding: the actions bar is the last child and supplies its own,
+     so no field can ever scroll into view below the sticky buttons. */
+  padding: 16px 16px 0;
+  border-radius: var(--r-lg) 0 0 var(--r-lg);
+  background: var(--panel-solid);
+  border-left: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  box-shadow: -20px 0 50px rgba(0, 0, 0, 0.6);
+  animation: slide-in 240ms var(--ease);
+}
+
+@keyframes slide-in {
+  from {
+    transform: translateX(24px);
+    opacity: 0;
+  }
+}
+
+.drawer h2 {
+  margin: 0 0 4px;
+  font-family: var(--font-display);
+  font-size: 19px;
+}
+
+.drawer .group {
+  margin: 16px 0 8px;
+  font-family: var(--font-data);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent);
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+  padding-bottom: 4px;
+}
+
+.field {
+  margin-bottom: 12px;
+}
+
+.field > label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 3px;
+}
+
+.field .hint {
+  display: block;
+  font-size: 11px;
+  color: var(--ink-faint);
+  margin-top: 3px;
+}
+
+.field input[type="text"],
+.field input[type="number"],
+.field textarea,
+.field select {
+  width: 100%;
+  padding: 6px 9px;
+  font-family: var(--font-data);
+  font-size: 12px;
+  color: var(--ink);
+  background: rgba(0, 0, 0, 0.42);
+  border: 1px solid color-mix(in srgb, var(--accent) 32%, transparent);
+  border-radius: var(--r-sm);
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.55);
+}
+
+.field textarea {
+  resize: vertical;
+  min-height: 62px;
+}
+
+.field input:focus,
+.field textarea:focus,
+.field select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.55), 0 0 12px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.switch input {
+  appearance: none;
+  width: 38px;
+  height: 20px;
+  border-radius: var(--r-pill);
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid var(--edge-lo);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.6);
+  position: relative;
+  cursor: pointer;
+  transition: background var(--dur) var(--ease);
+}
+
+.switch input::after {
+  content: "";
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #fff, #b9c6d6);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+  transition: transform var(--dur) var(--ease);
+}
+
+.switch input:checked {
+  background: linear-gradient(180deg, var(--accent-3), var(--accent));
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4), 0 0 12px color-mix(in srgb, var(--accent) 60%, transparent);
+}
+
+.switch input:checked::after {
+  transform: translateX(18px);
+}
+
+.drawer-actions {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  gap: 8px;
+  /* The sheet has no bottom padding, so the bar's own padding is the page
+     gutter. It is opaque rather than a gradient: a translucent one lets the
+     last field's help text scroll through the buttons and read as theirs. */
+  padding: 12px 16px 16px;
+  margin: 16px -16px 0;
+  background: var(--panel-solid);
+  border-top: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+/* ----------------------------------------------------------------- misc --- */
+
+a {
+  color: var(--accent);
+}
+
+::-webkit-scrollbar {
+  width: 11px;
+  height: 11px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.35);
+}
+
+::-webkit-scrollbar-thumb {
+  border-radius: var(--r-pill);
+  background: linear-gradient(180deg, var(--chrome-b), var(--chrome-c));
+  border: 2px solid rgba(0, 0, 0, 0.4);
+}
+
+::selection {
+  background: color-mix(in srgb, var(--accent) 55%, transparent);
+  color: #04121f;
+}

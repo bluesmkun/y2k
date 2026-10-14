@@ -1,0 +1,14 @@
+# 依赖
+node_modules/
+
+# 构建产物：由 `pnpm build` 生成，不随源码提交
+y2k/
+dist/
+
+# 打包产物：随 GitHub Release 分发，不进版本库
+theme.tar.gz
+
+# 编辑器与系统
+.DS_Store
+*.log
+.vite/

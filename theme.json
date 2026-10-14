@@ -1,0 +1,165 @@
+{
+  "name": "千禧年 Y2K",
+  "short": "y2k",
+  "description": "千禧年复古未来主义探针主题：铬合金、水蓝玻璃、霓虹与扫描线",
+  "version": "1.0.0",
+  "author": "poooo",
+  "url": "https://github.com/bluesmkun/y2k",
+  "config": [
+    { "type": "title", "label": "外观" },
+    {
+      "key": "skin",
+      "type": "select",
+      "label": "配色",
+      "default": "aqua",
+      "help": "aqua 水蓝玻璃、chrome 液态铬、vapor 蒸汽波、matrix 终端绿",
+      "options": [
+        { "value": "aqua", "label": "Aqua 水蓝" },
+        { "value": "chrome", "label": "Chrome 液态铬" },
+        { "value": "vapor", "label": "Vaporwave 蒸汽波" },
+        { "value": "matrix", "label": "Matrix 终端绿" }
+      ]
+    },
+    {
+      "key": "backdrop",
+      "type": "select",
+      "label": "背景",
+      "default": "starfield",
+      "options": [
+        { "value": "starfield", "label": "星空" },
+        { "value": "grid", "label": "透视网格" },
+        { "value": "both", "label": "星空 + 网格" },
+        { "value": "plain", "label": "纯色" }
+      ]
+    },
+    {
+      "key": "crt",
+      "type": "boolean",
+      "label": "扫描线与屏幕反光",
+      "default": true,
+      "help": "叠一层 CRT 扫描线和暗角，关掉更清晰"
+    },
+    {
+      "key": "glass",
+      "type": "boolean",
+      "label": "玻璃高光",
+      "default": true,
+      "help": "卡片顶部的镜面反光条"
+    },
+
+    { "type": "title", "label": "首页" },
+    {
+      "key": "notice",
+      "type": "text",
+      "label": "公告",
+      "default": "",
+      "help": "滚动显示在页头下方，留空不显示"
+    },
+    {
+      "key": "layout",
+      "type": "select",
+      "label": "布局",
+      "default": "grid",
+      "options": [
+        { "value": "grid", "label": "卡片" },
+        { "value": "table", "label": "表格" }
+      ]
+    },
+    {
+      "key": "columns",
+      "type": "number",
+      "label": "每行卡片数",
+      "default": 3,
+      "min": 1,
+      "max": 6
+    },
+    {
+      "key": "show_summary",
+      "type": "boolean",
+      "label": "显示汇总条",
+      "default": true,
+      "help": "节点数、在线、流量、网速四格"
+    },
+    {
+      "key": "show_groups",
+      "type": "boolean",
+      "label": "显示分组标签",
+      "default": true,
+      "help": "站长给节点分了组时，在顶部出现可切换的标签"
+    },
+    {
+      "key": "show_flags",
+      "type": "boolean",
+      "label": "显示国家旗帜",
+      "default": true
+    },
+    {
+      "key": "show_remark",
+      "type": "boolean",
+      "label": "显示公开备注",
+      "default": true,
+      "help": "站长写给访客看的一行说明"
+    },
+
+    { "type": "title", "label": "指标" },
+    {
+      "key": "show_price",
+      "type": "boolean",
+      "label": "显示价格与到期",
+      "default": true,
+      "help": "卡片上的价格与到期徽标，以及顶部的费用汇总卡片；关掉后也不会请求汇率"
+    },
+    {
+      "key": "show_traffic",
+      "type": "boolean",
+      "label": "显示流量配额",
+      "default": true
+    },
+    {
+      "key": "show_net",
+      "type": "boolean",
+      "label": "显示实时网速",
+      "default": true
+    },
+    {
+      "key": "show_latency",
+      "type": "boolean",
+      "label": "显示延迟",
+      "help": "卡片上的三网延迟和详情页的延迟图。每张卡片会为自己的节点读取一次延迟数据。",
+      "default": true
+    },
+    {
+      "key": "currency",
+      "type": "select",
+      "label": "显示币种",
+      "help": "费用卡片的换算目标。选「原币种」则不请求汇率，各节点按自己的币种显示。",
+      "default": "",
+      "options": [
+        { "value": "", "label": "原币种（不换算）" },
+        { "value": "CNY", "label": "人民币 CNY ¥" },
+        { "value": "USD", "label": "美元 USD $" },
+        { "value": "EUR", "label": "欧元 EUR €" },
+        { "value": "JPY", "label": "日元 JPY ¥" },
+        { "value": "GBP", "label": "英镑 GBP £" },
+        { "value": "HKD", "label": "港币 HKD" },
+        { "value": "TWD", "label": "新台币 TWD" },
+        { "value": "SGD", "label": "新加坡元 SGD" },
+        { "value": "KRW", "label": "韩元 KRW" }
+      ]
+    },
+    {
+      "key": "rate_url",
+      "type": "string",
+      "label": "汇率接口",
+      "help": "默认 open.er-api.com（免费、无需密钥）。可换成自建镜像；留空则用默认值。",
+      "default": "https://open.er-api.com/v6/latest/USD"
+    },
+    {
+      "key": "compact",
+      "type": "boolean",
+      "label": "紧凑卡片",
+      "default": false,
+      "help": "隐藏内核、架构等次要信息，一屏放下更多节点"
+    }
+  ]
+}
