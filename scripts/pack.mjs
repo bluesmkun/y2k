@@ -49,6 +49,23 @@ function walk(dir) {
   return entries
 }
 
+// The modes written into the header, fixed rather than read off the packing
+// machine's filesystem. The installer chmods every entry to whatever the header
+// says, directories included -- so a directory entry with the wrong bits is not
+// a cosmetic detail, it is an install that fails.
+//
+// This bit us on Windows, where the filesystem reports 0666 for a directory.
+// Packed there, `dist/` arrived as `drw-rw-rw-`; the hub runs as an unprivileged
+// user, and a directory without the execute bit cannot be searched, so the very
+// next member -- `dist/apple-touch-icon.png`, the first file inside it -- failed
+// with `Permission denied (os error 13)`. The hub logs the raw io error and
+// answers 500 "hub 内部出错", which names neither the file nor the mode.
+//
+// 0755 and 0644 are what every published theme carries; keep them fixed so the
+// archive is byte-identical whichever machine packs it.
+const MODE_DIR = 0o755
+const MODE_FILE = 0o644
+
 /** A ustar header: 512 bytes, the name split across the prefix field past 100. */
 function header(name, size, mode, type, mtime) {
   const block = Buffer.alloc(512)
@@ -107,7 +124,7 @@ for (const full of entries) {
   // into --themes gives <themes-dir>/<short>/... directly.
   const name = relative(source, full).split(sep).join("/")
   const dir = info.isDirectory()
-  parts.push(header(dir ? `${name}/` : name, dir ? 0 : info.size, info.mode & 0o777, dir ? "5" : "0", mtime))
+  parts.push(header(dir ? `${name}/` : name, dir ? 0 : info.size, dir ? MODE_DIR : MODE_FILE, dir ? "5" : "0", mtime))
   if (!dir) {
     const body = readFileSync(full)
     parts.push(body)
@@ -121,12 +138,39 @@ const end = Buffer.alloc(1024 + ((10240 - ((body.length + 1024) % 10240)) % 1024
 const tar = Buffer.concat([body, end])
 if (tar.length - body.length > LIMITS.padding) throw new Error("tar padding is over the 1 MiB limit")
 
+// Reads the headers back out of the finished archive and checks the two modes
+// the installer depends on. Reverting to a mode taken from the packing machine
+// is the easy mistake, and it is invisible until a hub refuses the package, so
+// the package is not written if it carries a directory without the execute bit.
+function verify(tar) {
+  const str = (buf) => buf.toString("utf8").replace(/\0.*$/s, "").trim()
+  const oct = (buf) => parseInt(str(buf).replace(/[^0-7]/g, "") || "0", 8)
+  let at = 0
+  let count = 0
+  while (at + 512 <= tar.length) {
+    const head = tar.subarray(at, at + 512)
+    if (head.every((b) => b === 0)) break
+    const name = str(head.subarray(0, 100))
+    const size = oct(head.subarray(124, 136))
+    const mode = oct(head.subarray(100, 108)) & 0o777
+    const isDir = String.fromCharCode(head[156]) === "5" || name.endsWith("/")
+    if (isDir && mode !== MODE_DIR) throw new Error(`directory \`${name}\` is ${mode.toString(8)}, want ${MODE_DIR.toString(8)}`)
+    if (!isDir && mode !== MODE_FILE) throw new Error(`file \`${name}\` is ${mode.toString(8)}, want ${MODE_FILE.toString(8)}`)
+    count += 1
+    at += 512 + Math.ceil(size / 512) * 512
+  }
+  if (count !== entries.length) throw new Error(`archive holds ${count} entries, expected ${entries.length}`)
+  return count
+}
+
 const gz = gzipSync(tar, { level: 9 })
 if (gz.length > LIMITS.package) throw new Error(`${gz.length} bytes is over the 32 MiB package limit`)
+verify(tar)
 writeFileSync(target, gz)
 
 const kb = (n) => `${(n / 1024).toFixed(1)} KiB`
 console.log(
   `wrote theme.tar.gz: ${kb(gz.length)} packed, ${kb(unpacked)} unpacked, ` +
-    `${entries.length} entries (${entries.length - dirs} files + ${dirs} directories)`,
+    `${entries.length} entries (${entries.length - dirs} files + ${dirs} directories), ` +
+    `modes ${MODE_DIR.toString(8)}/${MODE_FILE.toString(8)}`,
 )
