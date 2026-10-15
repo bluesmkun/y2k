@@ -1,5 +1,5 @@
 import { ago, bytes, cycle, daysUntil, money, monthUsage, osName, pair, percent, rate, sinceSeen, uptime } from "@/lib/format"
-import { latencyTone, useLatency } from "@/lib/latency"
+import { CARRIERS, latencyTone, useLatency } from "@/lib/latency"
 import { useFlag } from "@/lib/theme"
 import { Meter } from "@/components/Meter"
 import type { Node } from "@/lib/api"
@@ -61,18 +61,38 @@ function quiet(node: Node): string {
 function LatencyPlate({ id, enabled }: { id: number; enabled: boolean }) {
   const rows = useLatency(id, enabled)
 
+  /* A node that is not reporting keeps the latency plate rather than losing it,
+     for the same reason its meters above stay: a card that drops a row when its
+     machine goes down is a different height from its neighbours, and the number
+     a reader is scanning down a column moves sideways. The three carrier
+     columns are drawn empty instead, with the same fixed widths, so the grid
+     still lines up under every other card in the list. */
   if (!enabled) {
     return (
-      <div className="plate" style={{ justifyContent: "center" }}>
-        <span className="faint">延迟 —</span>
+      <div className="latency-block">
+        <div className="plate probes faint">
+          {CARRIERS.map((carrier) => (
+            <span key={carrier.key}>
+              <span className="faint">{carrier.name}</span>
+              <span>—</span>
+            </span>
+          ))}
+        </div>
       </div>
     )
   }
 
   if (rows === null) {
     return (
-      <div className="plate" style={{ justifyContent: "center" }}>
-        <span className="faint">延迟读取中…</span>
+      <div className="latency-block">
+        <div className="plate probes faint">
+          {CARRIERS.map((carrier) => (
+            <span key={carrier.key}>
+              <span className="faint">{carrier.name}</span>
+              <span>…</span>
+            </span>
+          ))}
+        </div>
       </div>
     )
   }

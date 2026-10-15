@@ -28,7 +28,7 @@
   --ease: cubic-bezier(0.2, 0.7, 0.3, 1);
 }
 
-/* Four skins. Each one only swaps the palette: every rule below reads these.
+/* Thirteen skins. Each one only swaps the palette: every rule below reads these.
    Aqua is also bound to `:root`, not just to `[data-skin="aqua"]`, because
    `body` sits outside the element carrying the attribute -- without the root
    binding the page background, the backdrop and the settings drawer would all
@@ -240,6 +240,143 @@
   --chrome-a: #fff6f0;
   --chrome-b: #e8a88c;
   --chrome-c: #8f4a3c;
+}
+
+/* Luna: the Windows XP default, the single most-seen desktop of the era. The
+   blue taskbar and olive-green Start button are the two colours everyone
+   remembers, so the panels are the taskbar blue and the accents are the Start
+   green and the XP orange, with a sky-blue gradient behind. */
+[data-skin="luna"] {
+  --bg-0: #0a1c3e;
+  --bg-1: #12407a;
+  --bg-2: #2f74c0;
+  --panel: rgba(16, 62, 116, 0.78);
+  --panel-solid: #12406f;
+  --panel-2: rgba(46, 104, 168, 0.5);
+  --edge-hi: rgba(226, 240, 255, 0.62);
+  --edge-lo: rgba(0, 12, 32, 0.66);
+  --ink: #f2f7ff;
+  --ink-dim: #a8c6ea;
+  --ink-faint: #6d8fb8;
+  --accent: #3d8bfd;
+  --accent-2: #71c837;
+  --accent-3: #ffd24d;
+  --glow: 0 0 12px rgba(61, 139, 253, 0.68);
+  --ok: #71c837;
+  --warn: #ffc61e;
+  --bad: #e8443a;
+  --chrome-a: #ffffff;
+  --chrome-b: #7fb0e8;
+  --chrome-c: #245a9c;
+}
+
+/* Silver: Windows 2000/XP in its Classic theme -- the grey chrome the look
+   carried before Luna's blue arrived. Deliberately neutral: this is the one
+   skin in the set with no strong hue, the way the actual desktop looked. */
+[data-skin="silver"] {
+  --bg-0: #0b0d10;
+  --bg-1: #1d2229;
+  --bg-2: #343c46;
+  --panel: rgba(38, 44, 52, 0.82);
+  --panel-solid: #2b3138;
+  --panel-2: rgba(72, 82, 94, 0.5);
+  --edge-hi: rgba(232, 238, 246, 0.55);
+  --edge-lo: rgba(0, 0, 0, 0.62);
+  --ink: #eceff4;
+  --ink-dim: #b0b8c2;
+  --ink-faint: #78818d;
+  --accent: #4f86c6;
+  --accent-2: #9fb4cc;
+  --accent-3: #d8e2ee;
+  --glow: 0 0 12px rgba(79, 134, 198, 0.6);
+  --ok: #62c47c;
+  --warn: #e8b23c;
+  --bad: #d1564e;
+  --chrome-a: #ffffff;
+  --chrome-b: #aab4c0;
+  --chrome-c: #5c6672;
+}
+
+/* Panther: Mac OS X 10.0 "Aqua", the other half of the era's screenshot -- the
+   pinstripe blue and the candy gel buttons, cooled down for a dark UI. The
+   default skin already carries the name `aqua`, so this one takes the release
+   it shipped in. */
+[data-skin="panther"] {
+  --bg-0: #060a14;
+  --bg-1: #12203c;
+  --bg-2: #24406e;
+  --panel: rgba(20, 36, 64, 0.7);
+  --panel-solid: #16294a;
+  --panel-2: rgba(44, 74, 122, 0.5);
+  --edge-hi: rgba(238, 246, 255, 0.7);
+  --edge-lo: rgba(0, 6, 18, 0.62);
+  --ink: #f4f9ff;
+  --ink-dim: #a6bede;
+  --ink-faint: #6a83a6;
+  --accent: #3aa0ff;
+  --accent-2: #7fd4ff;
+  --accent-3: #d6ecff;
+  --glow: 0 0 13px rgba(58, 160, 255, 0.72);
+  --ok: #4fe0a8;
+  --warn: #ffcf5c;
+  --bad: #ff5f6d;
+  --chrome-a: #ffffff;
+  --chrome-b: #8fb8e0;
+  --chrome-c: #2a4a78;
+}
+
+/* Graphite: Mac OS X 10.3's brushed-metal era -- the Pro look, grey and warm
+   aluminium rather than blue. Aqua's shapes with the colour drained out. */
+[data-skin="graphite"] {
+  --bg-0: #0c0c0e;
+  --bg-1: #1e1f23;
+  --bg-2: #383a40;
+  --panel: rgba(40, 41, 46, 0.8);
+  --panel-solid: #2c2d32;
+  --panel-2: rgba(74, 76, 84, 0.5);
+  --edge-hi: rgba(238, 238, 244, 0.6);
+  --edge-lo: rgba(0, 0, 0, 0.68);
+  --ink: #f0f0f4;
+  --ink-dim: #b4b6c0;
+  --ink-faint: #7c7f8a;
+  --accent: #9aa4b4;
+  --accent-2: #c8d0dc;
+  --accent-3: #e6ebf2;
+  --glow: 0 0 11px rgba(154, 164, 180, 0.55);
+  --ok: #6ecf9a;
+  --warn: #e0b860;
+  --bad: #d8685e;
+  --chrome-a: #ffffff;
+  --chrome-b: #b0b4be;
+  --chrome-c: #5a5d66;
+}
+
+/* High contrast: the accessibility scheme Windows shipped from 98 onward --
+   black, white and the four saturated system colours, no decoration at all.
+   Included because it is a real Y2K desktop scheme and because it is the one
+   skin that stays legible on a bad panel. */
+[data-skin="contrast"] {
+  --bg-0: #000000;
+  --bg-1: #000000;
+  --bg-2: #101010;
+  --panel: #000000;
+  --panel-solid: #000000;
+  --panel-2: #1a1a1a;
+  --edge-hi: #ffffff;
+  --edge-lo: #000000;
+  --ink: #ffffff;
+  --ink-dim: #d8d8d8;
+  --ink-faint: #a0a0a0;
+  --accent: #00ff00;
+  --accent-2: #00ffff;
+  --accent-3: #ffff00;
+  --glow: 0 0 10px rgba(0, 255, 0, 0.85);
+  --ok: #00ff00;
+  --warn: #ffff00;
+  --bad: #ff0000;
+  --chrome-a: #ffffff;
+  --chrome-b: #c0c0c0;
+  --chrome-c: #808080;
 }
 
 /* ------------------------------------------------------------- base reset -- */
@@ -870,6 +1007,8 @@ a.btn {
   display: flex;
   flex-direction: column;
   justify-content: center;
+  align-items: center;
+  text-align: center;
   padding: 10px 12px 11px;
   border-radius: var(--r-md);
   background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 12%, transparent), rgba(0, 0, 0, 0.26));
@@ -895,14 +1034,6 @@ a.btn {
     grid-auto-rows: 1fr;
   }
 
-  /* Centred on a phone, where a tile is a square of its own rather than a cell
-     in a row of four; left-aligned on a desktop, where the four read as a
-     table and a ragged left edge would break the column. */
-  .stat {
-    align-items: center;
-    text-align: center;
-  }
-
   .stat .v.pair {
     grid-template-columns: auto auto;
     gap: 10px;
@@ -926,18 +1057,15 @@ a.btn {
   text-shadow: 0 0 10px color-mix(in srgb, var(--accent) 45%, transparent);
 }
 
-/* A value that is two numbers, not one phrase. Pushing them to the two edges
-   with a two-column grid keeps them aligned whatever the font: ↓ and ↑ are
-   not the same width, and spacing them with `&nbsp;` drifts the moment the
-   font, size, or locale changes. */
+/* A value that is two numbers, not one phrase. A two-column grid keeps the pair
+   on one baseline and, with both cells centred, keeps the pair as a whole in the
+   middle of the tile -- pushing them to the two edges only looked right while the
+   tiles were left-aligned. */
 .stat .v.pair {
   display: grid;
   grid-template-columns: 1fr 1fr;
   align-items: baseline;
-}
-
-.stat .v.pair > :last-child {
-  text-align: right;
+  width: 100%;
 }
 
 .stat .sub {
@@ -1354,10 +1482,22 @@ a.btn {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 
+/* The status readout on the detail page: lamp plus word, with no frame around
+   it. A bordered pill here competed with the agent badge next to it -- two
+   boxes side by side, one of which is not a status at all -- and the title row
+   already has enough hard edges. The lamp and the word carry the state; the
+   tint comes from the tone below. */
+.detail-head .badge[data-tone] {
+  padding: 0;
+  background: none;
+  border: none;
+  box-shadow: none;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+}
+
 .badge[data-tone="ok"] {
   color: var(--ok);
-  border-color: color-mix(in srgb, var(--ok) 50%, transparent);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 0 10px color-mix(in srgb, var(--ok) 30%, transparent);
 }
 
 .badge[data-tone="warn"] {

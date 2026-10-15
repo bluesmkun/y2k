@@ -2,7 +2,7 @@
   "name": "千禧年 Y2K",
   "short": "y2k",
   "description": "千禧年复古未来主义探针主题：铬合金、水蓝玻璃、霓虹与扫描线",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "author": "poooo",
   "url": "https://github.com/bluesmkun/y2k",
   "config": [
@@ -15,7 +15,7 @@
       "type": "select",
       "label": "配色",
       "default": "aqua",
-      "help": "八套配色，都是千禧年前后真实出现过的屏幕风格",
+      "help": "十三套配色，都是千禧年前后真实出现过的屏幕风格",
       "options": [
         {
           "value": "aqua",
@@ -48,6 +48,26 @@
         {
           "value": "sunrise",
           "label": "Sunrise 千禧日出"
+        },
+        {
+          "value": "luna",
+          "label": "Luna XP 蓝绿"
+        },
+        {
+          "value": "silver",
+          "label": "Silver 银灰经典"
+        },
+        {
+          "value": "panther",
+          "label": "Panther 苹果蓝"
+        },
+        {
+          "value": "graphite",
+          "label": "Graphite 石墨金属"
+        },
+        {
+          "value": "contrast",
+          "label": "Contrast 高对比"
         }
       ]
     },

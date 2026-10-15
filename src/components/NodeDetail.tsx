@@ -28,10 +28,9 @@ type Point = {
 
 /**
  * One probe's bucket. `latency` is the bucket's median round trip, null when
- * every probe in it timed out; `band` is the range its answers spanned, absent
- * when they spanned nothing; `loss` is the percentage that timed out.
+ * every probe in it timed out; `loss` is the percentage that timed out.
  */
-type PingPoint = { task_id: number; ts: number; latency: number | null; band?: [number, number]; loss?: number }
+type PingPoint = { task_id: number; ts: number; latency: number | null; loss?: number }
 
 type Answer = {
   metrics: Point[]
@@ -115,22 +114,18 @@ export function NodeDetail({ node, onBack, hidePing = false }: { node: Node; onB
     const built = (data?.metrics ?? []).map((p) => ({
       ...p,
       ts: p.ts * 1_000,
-      cpu_band: [p.cpu, Math.max(p.cpu, p.cpu_max ?? p.cpu)] as [number, number],
       rx: lifted(p.net_rx),
       tx: lifted(p.net_tx),
-      rx_band: [lifted(p.net_rx), lifted(p.net_rx_max ?? p.net_rx)] as [number, number],
-      tx_band: [lifted(p.net_tx), lifted(p.net_tx_max ?? p.net_tx)] as [number, number],
     }))
     // Broken where the node was silent: a day offline would otherwise draw as a
     // day of steady load.
     return withGaps(built)
   }, [data])
 
-  // The rows carry the band arrays alongside the scalars; each chart reads the
-  // keys it needs, and a row inserted for a gap carries neither and reads null.
+  // Each chart reads the keys it needs; a row inserted for a gap carries none
+  // and reads null.
   const pick = (key: string) => rows.map((r) => (key in r ? (r as Record<string, unknown>)[key] : null))
   const numeric = (key: string) => pick(key).map((v) => (typeof v === "number" ? v : null))
-  const banded = (key: string) => pick(key).map((v) => (Array.isArray(v) ? (v as [number, number]) : null))
 
   const axes = useMemo(() => {
     const max = (pick: (p: Point) => number) => (data?.metrics ?? []).reduce((hi, p) => Math.max(hi, pick(p)), 0)
@@ -156,7 +151,6 @@ export function NodeDetail({ node, onBack, hidePing = false }: { node: Node; onB
       .map((id) => {
         const own = samples.filter((p) => p.task_id === id)
         const values: (number | null)[] = Array(stamps.length).fill(null)
-        const bands: ([number, number] | null)[] = Array(stamps.length).fill(null)
         const window = despikeWindow(own)
         // Timeouts are retained: dropping them would draw a probe losing half its
         // packets as an unbroken line, and one that never answered not at all.
@@ -168,30 +162,14 @@ export function NodeDetail({ node, onBack, hidePing = false }: { node: Node; onB
         const raw = own.map((p) => p.latency)
         const flat = despiked ? despike(raw, window) : raw
         const smoothed = smooth ? movingAverage(flat, window) : flat
-        const loRaw = own.map((p) => p.band?.[0] ?? p.latency)
-        const hiRaw = own.map((p) => p.band?.[1] ?? p.latency)
-        const lo0 = despiked ? despike(loRaw, window) : loRaw
-        const hi0 = despiked ? despike(hiRaw, window) : hiRaw
-        const lo = smooth ? movingAverage(lo0, window) : lo0
-        const hi = smooth ? movingAverage(hi0, window) : hi0
         own.forEach((p, i) => {
           const i2 = at.get(p.ts)!
           values[i2] = smoothed[i]
-          const low = lo[i]
-          const high = hi[i]
-          // The two edges are filtered independently, so a bucket that answered
-          // slightly faster than usual can trip the low edge alone and come back
-          // above the high one; the span is taken across all three.
-          bands[i2] =
-            low === null || high === null
-              ? null
-              : [Math.min(low, high, smoothed[i] ?? low), Math.max(low, high, smoothed[i] ?? low)]
         })
         return {
           id: String(id),
           name: data?.probes?.[id] ?? `探测 ${id}`,
           values,
-          bands,
           loss: data?.loss?.[id] ?? 0,
         }
       })
@@ -212,7 +190,7 @@ export function NodeDetail({ node, onBack, hidePing = false }: { node: Node; onB
 
   const latencyTop = useMemo(() => {
     let hi = 0
-    for (const s of drawn) for (const b of s.bands) if (b) hi = Math.max(hi, b[1])
+    for (const s of drawn) for (const v of s.values) if (v !== null) hi = Math.max(hi, v)
     return axisTop(hi, 50, 100_000)
   }, [drawn])
 
@@ -221,7 +199,6 @@ export function NodeDetail({ node, onBack, hidePing = false }: { node: Node; onB
     name: s.name,
     color: PALETTE[i % PALETTE.length],
     values: s.values,
-    band: s.bands,
   }))
 
   // A probe that stopped answering in the selected window has no series; a
@@ -336,7 +313,7 @@ export function NodeDetail({ node, onBack, hidePing = false }: { node: Node; onB
               ticks={quarters(axes.cpu)}
               format={(n) => `${n.toFixed(0)}%`}
               series={[
-                { id: "cpu", name: "平均", color: "#4fd2ff", values: numeric("cpu"), band: banded("cpu_band") },
+                { id: "cpu", name: "平均", color: "#4fd2ff", values: numeric("cpu") },
               ]}
             />
           </Panel>
@@ -372,8 +349,8 @@ export function NodeDetail({ node, onBack, hidePing = false }: { node: Node; onB
               ticks={axes.rate.ticks}
               format={(n) => `${bytes(n, 1)}/s`}
               series={[
-                { id: "rx", name: "下行", color: "#45f0a8", values: numeric("rx"), band: banded("rx_band") },
-                { id: "tx", name: "上行", color: "#ff6ad5", values: numeric("tx"), band: banded("tx_band") },
+                { id: "rx", name: "下行", color: "#45f0a8", values: numeric("rx") },
+                { id: "tx", name: "上行", color: "#ff6ad5", values: numeric("tx") },
               ]}
             />
           </Panel>

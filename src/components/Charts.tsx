@@ -17,8 +17,6 @@ export type Series = {
   color: string
   /** Aligned with the chart's `rows`. */
   values: (number | null)[]
-  /** The span each bucket's samples covered, for the latency chart. */
-  band?: ([number, number] | null)[]
   /** Dashed, for a series the operator should read as secondary. */
   dashed?: boolean
 }
@@ -238,11 +236,39 @@ export function Chart({
               )
             })}
 
-            {/* Bands first, so a median line sits on top of its own spread. */}
-            {shown.map((s) => (s.band ? <g key={`b-${s.id}`}>{bandPath(s.band, x, y)}</g> : null))}
+            {/* No shaded band behind the lines. A min/max ribbon was drawn in a
+                single accent colour that did not belong to the line it sat
+                under, so on a chart with one series it read as a coloured block
+                pasted into the plot rather than as that line's spread; on a
+                chart where the hub reports no `_max` at all (memory, disk) there
+                was no ribbon and the chart looked like a different instrument.
+                The peak is reported in the panel's own corner instead, and the
+                CRT look comes from the trace itself (below) on every chart
+                alike. */}
 
             {shown.map((s) => (
               <g key={s.id}>
+                {/* The phosphor, in two passes: a wide dim bloom that lifts even a
+                    dark trace off the recessed plot (memory's violet was the one
+                    that disappeared -- the same two passes at the same widths
+                    read as a heavy glow on cyan and as nothing on violet, because
+                    the halo's brightness is the colour's own), then a tight
+                    bright one that gives the line its edge. The crisp trace on
+                    top keeps the figures legible; the bloom is what makes the
+                    four panels -- and the latency panel -- the same instrument. */}
+                {segments(s.values, x, y).map((d, i) => (
+                  <path
+                    key={`b${i}`}
+                    d={d}
+                    fill="none"
+                    stroke={s.color}
+                    strokeWidth="7"
+                    strokeLinecap="round"
+                    opacity="0.13"
+                    clipPath="url(#scope-clip)"
+                    style={{ filter: `blur(6px)` }}
+                  />
+                ))}
                 {segments(s.values, x, y).map((d, i) => (
                   <path
                     key={i}
@@ -251,7 +277,7 @@ export function Chart({
                     stroke={s.color}
                     strokeWidth="3.4"
                     strokeLinecap="round"
-                    opacity="0.28"
+                    opacity="0.38"
                     clipPath="url(#scope-clip)"
                     style={{ filter: `blur(3px)` }}
                   />
@@ -334,19 +360,6 @@ export function Chart({
       )}
     </div>
   )
-}
-
-/** The min-max span of a bucket's samples, as a filled ribbon. */
-function bandPath(band: ([number, number] | null)[], x: (i: number) => number, y: (v: number) => number) {
-  const up: string[] = []
-  const down: string[] = []
-  band.forEach((b, i) => {
-    if (!b) return
-    up.push(`${up.length ? "L" : "M"}${x(i).toFixed(2)} ${y(b[1]).toFixed(2)}`)
-    down.unshift(`L${x(i).toFixed(2)} ${y(b[0]).toFixed(2)}`)
-  })
-  if (up.length < 2) return null
-  return <path d={`${up.join(" ")} ${down.join(" ")} Z`} fill="var(--accent-3)" fillOpacity="0.13" stroke="none" />
 }
 
 /**

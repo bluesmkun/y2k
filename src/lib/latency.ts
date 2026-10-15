@@ -42,7 +42,7 @@ const SMOOTH = 5
  * while the other two went unmentioned. So the card speaks in carriers: every
  * probe whose name contains one of these words is folded into that carrier.
  */
-const CARRIERS = [
+export const CARRIERS = [
   { key: "telecom", name: "电信", match: ["电信"] },
   { key: "unicom", name: "联通", match: ["联通"] },
   { key: "mobile", name: "移动", match: ["移动"] },
