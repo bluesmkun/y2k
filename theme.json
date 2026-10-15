@@ -2,7 +2,7 @@
   "name": "千禧年 Y2K",
   "short": "y2k",
   "description": "千禧年复古未来主义探针主题：铬合金、水蓝玻璃、霓虹与扫描线",
-  "version": "1.4.0",
+  "version": "1.4.2",
   "author": "poooo",
   "url": "https://github.com/bluesmkun/y2k",
   "config": [
@@ -138,14 +138,6 @@
       "help": "滚动显示在页头下方，留空不显示"
     },
     {
-      "key": "columns",
-      "type": "number",
-      "label": "每行卡片数",
-      "default": 3,
-      "min": 1,
-      "max": 6
-    },
-    {
       "key": "show_summary",
       "type": "boolean",
       "label": "显示汇总条",
@@ -155,9 +147,9 @@
     {
       "key": "show_groups",
       "type": "boolean",
-      "label": "显示分组标签",
+      "label": "显示筛选标签",
       "default": true,
-      "help": "站长给节点分了组时，在顶部出现可切换的标签"
+      "help": "首页顶部的标签行：全部、各分组、未分组、在线、离线"
     },
     {
       "key": "show_flags",

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 
 import { groupsOf, useNodes, type Node } from "@/lib/api"
 import { markdown } from "@/lib/markdown"
-import { useFlag, useNumber, useText, useTheme } from "@/lib/theme"
+import { useFlag, useText, useTheme } from "@/lib/theme"
 import { NodeCard } from "@/components/NodeCard"
 import { NodeDetail } from "@/components/NodeDetail"
 import { Settings } from "@/components/Settings"
@@ -21,14 +21,40 @@ function route(path = location.pathname): number | null {
   return hit ? Number(hit[1]) : null
 }
 
+/**
+ * What the tab row is filtering by.
+ *
+ * A group's name is arbitrary text -- the hub allows any 13 characters, and
+ * "全部", "在线" and "未分组" are all legal group names -- so a status filter
+ * cannot be a bare string in the same space as a group: "在线" the group and
+ * "online" the filter would be one value. The kind tells them apart, and a group
+ * that really is named 在线 keeps working as its own tab.
+ */
+type Tab = { kind: "all" } | { kind: "group"; name: string } | { kind: "status"; online: boolean }
+
+const ALL: Tab = { kind: "all" }
+
+/** A tab's identity, for React keys and for "is this still a tab". `group:` is
+    a prefix rather than a separator, so a group named `status:up` cannot collide. */
+function tabId(tab: Tab): string {
+  if (tab.kind === "group") return `group:${tab.name}`
+  if (tab.kind === "status") return tab.online ? "status:up" : "status:down"
+  return "all"
+}
+
+function matches(tab: Tab, node: Node): boolean {
+  if (tab.kind === "group") return (node.group ?? "") === tab.name
+  if (tab.kind === "status") return node.online === tab.online
+  return true
+}
+
 export function App() {
   const { nodes, error, closed } = useNodes()
   const { canSave } = useTheme()
   const [open, setOpen] = useState<number | null>(() => route())
-  const [tab, setTab] = useState<string | null>(null)
+  const [tab, setTab] = useState<Tab>(ALL)
   const [settings, setSettings] = useState(false)
 
-  const columns = useNumber("columns", 3)
   const notice = useText("notice", "")
   const skin = useText("skin", "aqua")
   const backdrop = useText("backdrop", "starfield")
@@ -61,30 +87,29 @@ export function App() {
     return () => removeEventListener("popstate", pop)
   }, [])
 
-  // Every group in use, in node order, then the nodes carrying none. `null` is
-  // "all": a group may legitimately be named "全部" or "*", so the catch-all
-  // cannot be a string.
+  // Every group in use, in node order, then the nodes carrying none, then the two
+  // status filters. The catch-all is a kind rather than an empty string, because a
+  // group may legitimately be named 未分组 or 在线.
   const groups = useMemo(() => (nodes ? groupsOf(nodes) : []), [nodes])
   const tabs = useMemo(() => {
-    const named = groups.map((g) => ({ key: g as string | null, label: g }))
+    const named = groups.map((g) => ({ tab: { kind: "group", name: g } as Tab, label: g }))
     const ungrouped = (nodes ?? []).some((n) => !n.group)
     return [
-      { key: null, label: "全部" },
+      { tab: ALL, label: "全部" },
       ...named,
-      ...(ungrouped && named.length > 0 ? [{ key: "" as string | null, label: "未分组" }] : []),
+      ...(ungrouped && named.length > 0 ? [{ tab: { kind: "group", name: "" } as Tab, label: "未分组" }] : []),
+      { tab: { kind: "status", online: true } as Tab, label: "在线" },
+      { tab: { kind: "status", online: false } as Tab, label: "离线" },
     ]
   }, [groups, nodes])
 
-  // A group that disappears -- the operator renamed it, or the node left --
-  // must not leave the page on an empty tab.
+  // A group that disappears -- the operator renamed it, or its last node left --
+  // must not leave the page on an empty tab. The status filters are always there.
   useEffect(() => {
-    if (tab !== null && !tabs.some((t) => t.key === tab)) setTab(null)
+    if (!tabs.some((t) => tabId(t.tab) === tabId(tab))) setTab(ALL)
   }, [tabs, tab])
 
-  const shown = useMemo(() => {
-    const list = nodes ?? []
-    return tab === null ? list : list.filter((n) => (n.group ?? "") === tab)
-  }, [nodes, tab])
+  const shown = useMemo(() => (nodes ?? []).filter((n) => matches(tab, n)), [nodes, tab])
 
   const current = open === null ? null : (nodes ?? []).find((n) => n.id === open) ?? null
 
@@ -187,8 +212,8 @@ export function App() {
               </div>
             )
           ) : nodes === null ? (
-            <div className="grid" style={{ ["--cols" as string]: columns }}>
-              {Array.from({ length: columns * 2 }, (_, i) => (
+            <div className="grid">
+              {Array.from({ length: 6 }, (_, i) => (
                 <div className="skeleton" key={i} />
               ))}
             </div>
@@ -202,23 +227,20 @@ export function App() {
                 <div className="tabs">
                   {tabs.map((t) => (
                     <button
-                      key={t.key ?? "\u0000all"}
+                      key={tabId(t.tab)}
                       type="button"
                       className="tab"
-                      data-on={tab === t.key ? "true" : undefined}
-                      onClick={() => setTab(t.key)}
+                      data-on={tabId(tab) === tabId(t.tab) ? "true" : undefined}
+                      onClick={() => setTab(t.tab)}
                     >
                       {t.label}
-                      <span className="faint">
-                        {" "}
-                        {(nodes ?? []).filter((n) => (t.key === null ? true : (n.group ?? "") === t.key)).length}
-                      </span>
+                      <span className="faint"> {(nodes ?? []).filter((n) => matches(t.tab, n)).length}</span>
                     </button>
                   ))}
                 </div>
               )}
 
-              <div className="grid" style={{ ["--cols" as string]: columns }} data-compact={compact ? "true" : undefined}>
+              <div className="grid" data-compact={compact ? "true" : undefined}>
                 {shown.map((n) => (
                   <NodeCard key={n.id} node={n} onOpen={openNode} />
                 ))}

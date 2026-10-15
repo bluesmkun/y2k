@@ -24,6 +24,16 @@
   --r-lg: 12px;
   --r-pill: 999px;
 
+  /* The name column of a meter row, and the column its reading sits in. Both are
+     fixed rather than sized by their content: they are the two rails every bar
+     is drawn between, so a reading that is four characters wide in one row and
+     eighteen in the next must not move the rail. The reading is set in the data
+     font, so its width is the character count times a known advance -- fifteen
+     of them covers the longest figure the card writes ("500 / 1000 GB", and
+     "1310 / 500 GB" on a plan used past its quota). */
+  --meter-label: 36px;
+  --meter-val: 92px;
+
   --dur: 180ms;
   --ease: cubic-bezier(0.2, 0.7, 0.3, 1);
 }
@@ -998,6 +1008,11 @@ a.btn {
 .summary {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  /* Every tile takes the height of the tallest in its row, at every width and not
+     only on a phone. The four are read as one instrument, and one of them
+     growing while its neighbours stayed put read as a glitch rather than as
+     information. */
+  grid-auto-rows: 1fr;
   gap: 10px;
   margin-bottom: 14px;
 }
@@ -1015,28 +1030,18 @@ a.btn {
   border: 1px solid color-mix(in srgb, var(--accent) 26%, transparent);
   box-shadow: inset 0 1px 0 var(--edge-hi), inset 0 -1px 0 var(--edge-lo);
   overflow: hidden;
+  /* The tile measures itself, for the figure below. */
+  container-type: inline-size;
 }
 
 /* Phone: two columns, so the four tiles sit as a 2x2 square. `auto-fit` with a
    150px floor would give two columns on a 400px screen too, but only after the
    four have already folded into a single column on anything narrower than
    320px -- and a row of four stacked tiles pushes the node list below the fold
-   on a phone, which is the one place it must not be.
-
-   `grid-auto-rows: 1fr` is what makes the four the same height. A tile's height
-   otherwise follows its own text, and the cost tile's two-part subtitle ("剩余
-   价值 · 总费用 ¥510.10") wraps on a narrow screen while "在线率 89%" does not --
-   so the bottom pair grew taller than the top pair and the "square" was visibly
-   two rectangles. With 1fr rows every tile takes the tallest tile's height. */
+   on a phone, which is the one place it must not be. */
 @media (max-width: 680px) {
   .summary {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    grid-auto-rows: 1fr;
-  }
-
-  .stat .v.pair {
-    grid-template-columns: auto auto;
-    gap: 10px;
   }
 }
 
@@ -1048,24 +1053,63 @@ a.btn {
   color: var(--ink-faint);
 }
 
+/* The figure. Its size follows the tile rather than a fixed 19px, because the
+   throughput pair is two numbers of changing width side by side: at 19px a tile
+   narrower than about 300px has room for "↓ 182.4 MB/s" and "↑ 28.8 MB/s" only
+   on two lines each. Wrapping is what made this tile sometimes 86px tall and
+   sometimes 115px -- and because the numbers move every few seconds while the
+   window does not, tall and short again as the fleet got busy, moving the node
+   list down and back up under the reader's eyes.
+
+   So the line never wraps: `100cqw` is this tile's own width (it is its own
+   inline-size container above), and 19px is the ceiling, reached on any tile
+   from about 285px up. Below that the figure shrinks to whatever fits. The
+   divisor is the worst case, not the average: twelve characters of the data font
+   ("↓ 999.9 MB/s", the widest a rate gets) across two halves is about 13.2 times
+   the font size, and 15 leaves room for the fallback fonts on a machine without
+   Consolas or Menlo.
+
+   All four tiles share the figure, so they stay at one size as they shrink. */
 .stat .v {
   margin-top: 3px;
   font-family: var(--font-data);
-  font-size: 19px;
+  font-size: min(19px, calc(100cqw / 15));
   font-weight: 700;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
   text-shadow: 0 0 10px color-mix(in srgb, var(--accent) 45%, transparent);
 }
 
 /* A value that is two numbers, not one phrase. A two-column grid keeps the pair
    on one baseline and, with both cells centred, keeps the pair as a whole in the
    middle of the tile -- pushing them to the two edges only looked right while the
-   tiles were left-aligned. */
+   tiles were left-aligned. `minmax(0, 1fr)` rather than `1fr`: the halves are
+   exactly half each whatever the numbers measure, which is what lets the figure
+   above be sized for the worst case instead of the current one. */
 .stat .v.pair {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   align-items: baseline;
   width: 100%;
+}
+
+/* On a tile too narrow to hold the pair on one line at a legible size -- a phone
+   splits the summary into a 2x2 square, and a middling window puts four across --
+   they stack instead of shrinking further: one number per line, each centred,
+   with the width of the whole tile to itself. The tile is taller in this state,
+   but it was already taller whenever a number wrapped, and this way it is the
+   same height no matter what the numbers say. 225px is where the one-line figure
+   above would pass 15px; `100cqw / 8` is the same worst case as above, with one
+   number per line instead of two. */
+@container (max-width: 225px) {
+  .stat .v.pair {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+  }
+
+  .stat .v {
+    font-size: min(19px, calc(100cqw / 8));
+  }
 }
 
 .stat .sub {
@@ -1128,22 +1172,22 @@ a.btn {
 
 /* ------------------------------------------------------------------ cards -- */
 
+/* The cards flow to however many fit. There is a floor for one card and no
+   fixed count: the operator does not have to guess a number that happens to look
+   right on their own screen and then be wrong on every other one. `auto-fill`
+   rather than `auto-fit`, so a fleet of one or two nodes still gets cards of the
+   size the card was drawn for instead of one card stretched across the page --
+   `auto-fit` collapses the empty tracks and hands their width to the survivors.
+
+   330px is the floor rather than the 150px the summary tiles use: a card holds a
+   meter row (a 36px name column, a 92px reading column and the bar between), and
+   below about that the bar stops being readable. `min(330px, 100%)` so a screen
+   narrower than the floor itself gets one card the width of the page rather than
+   a track that overflows it. */
 .grid {
   display: grid;
-  grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(330px, 100%), 1fr));
   gap: 14px;
-}
-
-@media (max-width: 1100px) {
-  .grid {
-    grid-template-columns: repeat(min(var(--cols, 3), 2), minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 680px) {
-  .grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
 }
 
 .card {
@@ -1295,6 +1339,23 @@ a.btn {
   color: var(--ink-faint);
 }
 
+/* The OS / arch / kernel line. One line, always: the three fields wrap when the
+   distro name, the architecture and the kernel are all long, and a plate that is
+   two lines tall in one card pushes every row under it out of step with the rows
+   of the cards beside it -- the list is read down a column, so a plate that grows
+   is worse than a plate that ends in an ellipsis. The whole line is on the
+   tooltip. */
+.plate.ellipsis {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.plate.ellipsis .sep {
+  margin: 0 6px;
+}
+
 /* Node cards carry a status lamp in the head and nothing in the body, so the
    offline state has to be legible from the body too -- a card that only greys
    its head reads as "loading" rather than "down". The body keeps its rows so
@@ -1320,15 +1381,29 @@ a.btn {
 
 /* The three-network latency row on a card: one equal cell per carrier, each
    holding the carrier's name and its reading. The columns are equal on purpose
-   -- the cells are centred in them -- so 电信/联通/移动 land on the same three x
-   positions on every card in the list, instead of drifting with the width of the
-   number next to each name. */
+   -- so 电信/联通/移动 land on the same three x positions on every card in the list,
+   instead of drifting with the width of the number next to each name -- but the
+   cells inside them are edge-aligned like `.plate.pair` above: the first flush
+   left, the last flush right, the middle centred in what is left. Centring all
+   three insets the row by a third of a column, which left 电信 standing clear of
+   the ↓ on the row above it and of 负载 on the row below. */
 .plate.probes {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   align-items: baseline;
-  justify-items: center;
   column-gap: 4px;
+}
+
+.plate.probes > :first-child {
+  justify-self: start;
+}
+
+.plate.probes > :nth-child(2) {
+  justify-self: center;
+}
+
+.plate.probes > :last-child {
+  justify-self: end;
 }
 
 /* Latency over loss: two stacked plates, each three equal columns, so the two
@@ -1348,12 +1423,22 @@ a.btn {
   white-space: nowrap;
 }
 
-/* The loss row: the same three columns, tinted amber so it reads as a second
-   kind of measurement rather than a second latency figure, and set a touch
-   smaller because it is the exception, not the number anyone opens the page
-   for. */
-.plate.probes[data-loss="on"] {
+/* "No probe configured", which has no columns to sit in. */
+.plate.probes > .none {
+  grid-column: 1 / -1;
+  justify-self: center;
+}
+
+/* The loss row: the same three columns, a size smaller because it is the
+   exception rather than the number anyone opens the page for. The size is set
+   whether or not the row is tinted, so the row is the same height on a card
+   whose carriers are clean, one whose carriers are not, and one that is not
+   reporting -- the three must not differ in layout. */
+.plate.probes.loss {
   font-size: 10px;
+}
+
+.plate.probes[data-loss="on"] {
   color: var(--warn);
 }
 
@@ -1372,9 +1457,15 @@ a.btn {
   gap: 6px;
 }
 
+/* A meter row: name, bar, reading. The two outer columns are fixed -- see
+   `--meter-label` and `--meter-val` -- so every bar in a card, and every bar in
+   every card of a row, starts and ends on the same two vertical lines. Sized by
+   their content instead, the reading column would be five characters wide on the
+   CPU row and eighteen on the disk row, and the three bars would visibly differ
+   in length, which is the one thing a row of bars is for. */
 .meter {
   display: grid;
-  grid-template-columns: 34px 1fr auto;
+  grid-template-columns: var(--meter-label) minmax(0, 1fr) var(--meter-val);
   align-items: center;
   gap: 7px;
   font-size: 11px;
@@ -1391,8 +1482,13 @@ a.btn {
 .meter .val {
   font-family: var(--font-data);
   font-variant-numeric: tabular-nums;
+  text-align: right;
   color: var(--ink-dim);
   white-space: nowrap;
+  /* A figure longer than the rail is clipped rather than allowed to push the
+     rail out; the rail is what the alignment above is for. */
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* The trough: a recessed channel the segments sit in. */
@@ -1435,6 +1531,23 @@ a.btn {
 
 .meter[data-empty="true"] .val {
   color: var(--ink-faint);
+}
+
+/* A figure with no ceiling: nothing can be filled towards it, so the channel is
+   hatched instead of lit. The hatch is what tells the row apart from the empty
+   meter above -- "no quota to measure against" is not "nothing reported" -- and
+   it keeps the row exactly as tall as every other meter on the card. */
+.trough[data-uncapped="true"] {
+  background:
+    repeating-linear-gradient(
+      45deg,
+      color-mix(in srgb, var(--accent) 26%, transparent) 0px,
+      color-mix(in srgb, var(--accent) 26%, transparent) 3px,
+      transparent 3px,
+      transparent 7px
+    ),
+    rgba(0, 0, 0, 0.5);
+  opacity: 0.75;
 }
 
 /* The segmented LED look: a repeating mask cuts the fill into cells, and the

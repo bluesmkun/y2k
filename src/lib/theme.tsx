@@ -113,9 +113,3 @@ export function useText(key: string, fallback = ""): string {
   const v = values[key]
   return typeof v === "string" ? v : fallback
 }
-
-export function useNumber(key: string, fallback: number): number {
-  const { values } = useTheme()
-  const v = values[key]
-  return typeof v === "number" && Number.isFinite(v) ? v : fallback
-}

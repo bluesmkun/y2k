@@ -12,20 +12,42 @@
 
  * `level` overrides the colour band, for a figure whose danger is not its
  * magnitude; it is ignored by the empty meter, which has no magnitude to judge.
+ *
+ * `uncapped` is the third shape: a figure the plan does not meter at all, as an
+ * unlimited traffic allowance. There is nothing to fill a bar towards, so the
+ * trough is hatched instead -- the row keeps its height and its detail, which is
+ * the whole reason the allowance is drawn as a meter rather than as a plate: a
+ * card whose quota row is a plate is a different height from one whose is a
+ * meter, and the rows under it then sit at two different heights in the list.
  */
 export function Meter({
   label,
-  value,
+  value = null,
   detail,
   level,
+  uncapped = false,
 }: {
   label: string
   /** 0-100 or higher; a plan used past its quota reads over 100. `null` = no data. */
-  value: number | null
+  value?: number | null
   detail: string
   /** Overrides the colour band, for a figure whose danger is not its magnitude. */
   level?: "ok" | "warn" | "bad"
+  /** A figure with no ceiling: the trough is hatched and nothing is filled. */
+  uncapped?: boolean
 }) {
+  if (uncapped) {
+    return (
+      <div className="meter">
+        <span className="label">{label}</span>
+        <div className="trough" data-uncapped="true">
+          <div className="cells" />
+        </div>
+        <span className="val">{detail}</span>
+      </div>
+    )
+  }
+
   const empty = value === null || !Number.isFinite(value)
 
   if (empty) {

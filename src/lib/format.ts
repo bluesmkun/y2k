@@ -23,6 +23,26 @@ export function pair(used: number, total: number): string {
   return `${bytes(used)} / ${bytes(total)}`
 }
 
+/**
+ * The same pair for a card's meter, where the figure shares its row with the
+ * bar. It differs from `pair` in two ways, both of which exist to keep that
+ * column narrow and its rows the same width:
+ *
+ *   - the total decides the unit, so a figure that crossed into the next unit
+ *     ("1310.72 / 500 GB" when a plan is used past its quota) does not change
+ *     units mid-pair or grow by a digit;
+ *   - trailing zeros are dropped, because "3.20 / 16.00 GB" spends four columns
+ *     of bar width on digits that say nothing.
+ *
+ * The detail page keeps `pair`: it has room, and there the two-decimal form
+ * lines up with the figures around it.
+ */
+export function pairShort(used: number, total: number): string {
+  const i = total > 0 ? unitOf(total) : unitOf(used)
+  const f = (n: number) => `${Number((n / 1024 ** i).toFixed(i === 0 ? 0 : 2))}`
+  return `${f(used)} / ${f(total)} ${UNITS[i]}`
+}
+
 export function rate(n: number): string {
   return `${bytes(n, 1)}/s`
 }

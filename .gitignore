@@ -13,3 +13,6 @@ theme.tar.gz.sha256
 .DS_Store
 *.log
 .vite/
+
+# 本地 UI 验证用的一次性工具（mock hub、无头截图、几何测量），不属于主题
+mock/
