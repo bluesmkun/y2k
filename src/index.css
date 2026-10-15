@@ -130,6 +130,118 @@
   --chrome-c: #2f6a48;
 }
 
+/* --- The rest of the Y2K family -------------------------------------------
+   Each skin is a palette an operating system of 1999-2003 could plausibly have
+   shipped, not a tint of the one before it: the accents move around the wheel,
+   the panels change from glass to opaque, and the chrome ramp changes with
+   them. A skin only sets these variables -- every rule below reads them -- so
+   adding one is a block of twenty lines and no new CSS. */
+
+/* Bubblegum iMac: the fruit-flavoured plastic of the era, translated to a dark
+   UI. Warm cream ink on plum glass, with tangerine and cyan as the accents. */
+[data-skin="bubble"] {
+  --bg-0: #2a0a20;
+  --bg-1: #551238;
+  --bg-2: #8a2a52;
+  --panel: rgba(76, 18, 50, 0.72);
+  --panel-solid: #48142f;
+  --panel-2: rgba(140, 46, 92, 0.5);
+  --edge-hi: rgba(255, 224, 240, 0.6);
+  --edge-lo: rgba(40, 0, 24, 0.65);
+  --ink: #fff0f7;
+  --ink-dim: #f0a8c8;
+  --ink-faint: #b8708f;
+  --accent: #ff8a3d;
+  --accent-2: #4de2ff;
+  --accent-3: #ffd9a8;
+  --glow: 0 0 12px rgba(255, 138, 61, 0.7);
+  --ok: #6bffc4;
+  --warn: #ffd166;
+  --bad: #ff4f7e;
+  --chrome-a: #fff4fa;
+  --chrome-b: #e69ab8;
+  --chrome-c: #8f3f62;
+}
+
+/* Amber CRT: the monochrome terminal before green won. Everything is one
+   phosphor hue, dim and warm, the way a 1999 amber monitor actually looked. */
+[data-skin="amber"] {
+  --bg-0: #140b00;
+  --bg-1: #2e1a02;
+  --bg-2: #5a3405;
+  --panel: rgba(46, 27, 3, 0.78);
+  --panel-solid: #2a1802;
+  --panel-2: rgba(92, 56, 8, 0.5);
+  --edge-hi: rgba(255, 226, 168, 0.45);
+  --edge-lo: rgba(20, 8, 0, 0.75);
+  --ink: #ffe9bd;
+  --ink-dim: #d9a955;
+  --ink-faint: #9a7434;
+  --accent: #ffb200;
+  --accent-2: #ff8c42;
+  --accent-3: #ffe6a8;
+  --glow: 0 0 12px rgba(255, 178, 0, 0.6);
+  --ok: #b8ff5c;
+  --warn: #ffd166;
+  --bad: #ff6b3d;
+  --chrome-a: #fff3d6;
+  --chrome-b: #d4a558;
+  --chrome-c: #8a5f1e;
+}
+
+/* Ice: the blue-white of a Graphite-era workstation, cool and low-contrast.
+   The calmest of the set, for an operator who wants the page to stay quiet. */
+[data-skin="ice"] {
+  --bg-0: #060c14;
+  --bg-1: #0e1c2e;
+  --bg-2: #1c3554;
+  --panel: rgba(14, 28, 48, 0.7);
+  --panel-solid: #122238;
+  --panel-2: rgba(34, 62, 98, 0.5);
+  --edge-hi: rgba(236, 248, 255, 0.55);
+  --edge-lo: rgba(0, 8, 20, 0.6);
+  --ink: #f0f8ff;
+  --ink-dim: #a8c4de;
+  --ink-faint: #6b88a6;
+  --accent: #7fb8ff;
+  --accent-2: #b9e4ff;
+  --accent-3: #eaf6ff;
+  --glow: 0 0 12px rgba(127, 184, 255, 0.55);
+  --ok: #8ce8c8;
+  --warn: #ffd79a;
+  --bad: #ff9db0;
+  --chrome-a: #ffffff;
+  --chrome-b: #b8cfe4;
+  --chrome-c: #5f7793;
+}
+
+/* Y2K sunrise: the gradient poster of the era -- magenta to orange to yellow --
+   kept as a dark UI by holding the poster in the backdrop and the accents
+   rather than in the panels. */
+[data-skin="sunrise"] {
+  --bg-0: #1a0a1e;
+  --bg-1: #4a1230;
+  --bg-2: #8a3a20;
+  --panel: rgba(52, 16, 42, 0.72);
+  --panel-solid: #33102a;
+  --panel-2: rgba(110, 38, 60, 0.5);
+  --edge-hi: rgba(255, 226, 200, 0.58);
+  --edge-lo: rgba(28, 0, 20, 0.65);
+  --ink: #fff2e8;
+  --ink-dim: #f0b49a;
+  --ink-faint: #b57a6a;
+  --accent: #ff6b9d;
+  --accent-2: #ffb347;
+  --accent-3: #ffe066;
+  --glow: 0 0 12px rgba(255, 107, 157, 0.68);
+  --ok: #7bffc8;
+  --warn: #ffd166;
+  --bad: #ff4d6d;
+  --chrome-a: #fff6f0;
+  --chrome-b: #e8a88c;
+  --chrome-c: #8f4a3c;
+}
+
 /* ------------------------------------------------------------- base reset -- */
 
 *,
@@ -238,6 +350,148 @@ body {
   }
 }
 
+/* Sun: the gradient poster disc, half-risen, with the horizontal slats every
+   such poster was striped with. Drawn as a masked radial so it reads as a sun
+   rather than a circle, and held low so it never competes with the cards. */
+.backdrop[data-sun="on"] .sun {
+  position: absolute;
+  left: 50%;
+  bottom: -18%;
+  width: min(78vw, 900px);
+  aspect-ratio: 1;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: linear-gradient(180deg, #ffe066 0%, #ff8c42 42%, #ff4d8d 78%, #b02a6e 100%);
+  opacity: 0.32;
+  filter: blur(2px);
+  mask-image: repeating-linear-gradient(
+    to bottom,
+    #000 0px,
+    #000 14px,
+    transparent 14px,
+    transparent 20px
+  );
+  -webkit-mask-image: repeating-linear-gradient(
+    to bottom,
+    #000 0px,
+    #000 14px,
+    transparent 14px,
+    transparent 20px
+  );
+  mask-composite: intersect;
+  -webkit-mask-composite: source-in;
+}
+
+/* Aurora: two soft ribbons of light, drifting past each other. Pure blurred
+   radial gradients at low opacity -- the effect is in the blur, not the shape. */
+.backdrop[data-aurora="on"] .aurora {
+  position: absolute;
+  inset: -30% -20%;
+  background:
+    radial-gradient(45% 35% at 22% 28%, color-mix(in srgb, var(--accent) 42%, transparent), transparent 70%),
+    radial-gradient(40% 30% at 74% 18%, color-mix(in srgb, var(--accent-2) 38%, transparent), transparent 72%),
+    radial-gradient(50% 40% at 50% 78%, color-mix(in srgb, var(--accent-3) 22%, transparent), transparent 74%);
+  filter: blur(42px);
+  animation: aurora-drift 26s var(--ease) infinite alternate;
+  opacity: 0.75;
+}
+
+@keyframes aurora-drift {
+  from {
+    transform: translate3d(-3%, -2%, 0) scale(1);
+  }
+  to {
+    transform: translate3d(4%, 3%, 0) scale(1.12);
+  }
+}
+
+/* Matrix rain: columns of falling dashes. Drawn as gradients rather than as
+   characters, so it costs nothing to run and cannot be selected, read, or
+   mistaken for content.
+
+   The trick that makes it read as rain rather than as a texture is the PHASE:
+   all the columns share one `background-image`, so they would otherwise fall in
+   lockstep and read as horizontal banding. `background-position` therefore
+   offsets each layer by a different x, and -- because a repeating gradient's
+   tile is its own `background-size` -- giving each layer a tile height that is
+   NOT a multiple of the others' keeps them out of sync as they scroll. Three
+   layers, three widths, three dash rhythms, three speeds. */
+.backdrop[data-rain="on"] .rain {
+  position: absolute;
+  inset: -25% 0;
+  background-image:
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0px,
+      transparent 34px,
+      color-mix(in srgb, var(--accent) 85%, transparent) 34px,
+      color-mix(in srgb, var(--accent) 85%, transparent) 43px,
+      transparent 43px,
+      transparent 58px
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0px,
+      transparent 22px,
+      color-mix(in srgb, var(--accent-2, var(--accent)) 55%, transparent) 22px,
+      color-mix(in srgb, var(--accent-2, var(--accent)) 55%, transparent) 27px,
+      transparent 27px,
+      transparent 71px
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0px,
+      transparent 47px,
+      color-mix(in srgb, var(--accent-3, var(--accent)) 35%, transparent) 47px,
+      color-mix(in srgb, var(--accent-3, var(--accent)) 35%, transparent) 52px,
+      transparent 52px,
+      transparent 89px
+    );
+  background-size: 19px 100%, 31px 100%, 47px 100%;
+  background-position: 3px 0, 17px 0, 37px 0;
+  animation: rain-fall 2.2s linear infinite;
+  opacity: 0.55;
+  mask-image: linear-gradient(to bottom, transparent 0%, #000 22%, #000 72%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 22%, #000 72%, transparent 100%);
+}
+
+/* Each layer travels a different distance in the same time: the near columns
+   (widest, brightest) fall fastest, the far ones lag. That parallax is what
+   makes a flat 2D field of dashes read as depth. */
+@keyframes rain-fall {
+  from {
+    background-position: 3px -1160px, 17px -840px, 37px -560px;
+  }
+  to {
+    background-position: 3px 0px, 17px 0px, 37px 0px;
+  }
+}
+
+/* Horizon: the plain two-tone sky-and-floor of a late-90s 3D desktop, with the
+   grid only on the floor. Cheaper and calmer than the full perspective grid. */
+.backdrop[data-horizon="on"] .horizon {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(to bottom, transparent 0%, transparent 58%, color-mix(in srgb, var(--accent) 14%, transparent) 58%, color-mix(in srgb, var(--accent) 4%, transparent) 100%),
+    linear-gradient(to bottom, transparent 57.7%, color-mix(in srgb, var(--accent-3) 60%, transparent) 58%, transparent 58.5%);
+}
+
+.backdrop[data-horizon="on"] .horizon::after {
+  content: "";
+  position: absolute;
+  left: -20%;
+  right: -20%;
+  bottom: 0;
+  height: 42%;
+  background-image:
+    linear-gradient(to right, color-mix(in srgb, var(--accent) 30%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, var(--accent) 26%, transparent) 1px, transparent 1px);
+  background-size: 56px 34px;
+  mask-image: linear-gradient(to top, #000 10%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to top, #000 10%, transparent 100%);
+}
+
 /* CRT: scanlines and a vignette. Both are pure overlays, so text stays crisp
    underneath; the setting is there for operators who would rather read clean. */
 .crt {
@@ -271,7 +525,9 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .backdrop::before,
   .backdrop::after,
-  .backdrop .pgrid {
+  .backdrop .pgrid,
+  .backdrop .aurora,
+  .backdrop .rain {
     animation: none;
   }
 }
@@ -611,6 +867,9 @@ a.btn {
 
 .stat {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   padding: 10px 12px 11px;
   border-radius: var(--r-md);
   background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 12%, transparent), rgba(0, 0, 0, 0.26));
@@ -623,11 +882,30 @@ a.btn {
    150px floor would give two columns on a 400px screen too, but only after the
    four have already folded into a single column on anything narrower than
    320px -- and a row of four stacked tiles pushes the node list below the fold
-   on a phone, which is the one place it must not be. The explicit pair of
-   columns keeps the square whatever the width. */
+   on a phone, which is the one place it must not be.
+
+   `grid-auto-rows: 1fr` is what makes the four the same height. A tile's height
+   otherwise follows its own text, and the cost tile's two-part subtitle ("剩余
+   价值 · 总费用 ¥510.10") wraps on a narrow screen while "在线率 89%" does not --
+   so the bottom pair grew taller than the top pair and the "square" was visibly
+   two rectangles. With 1fr rows every tile takes the tallest tile's height. */
 @media (max-width: 680px) {
   .summary {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-rows: 1fr;
+  }
+
+  /* Centred on a phone, where a tile is a square of its own rather than a cell
+     in a row of four; left-aligned on a desktop, where the four read as a
+     table and a ragged left edge would break the column. */
+  .stat {
+    align-items: center;
+    text-align: center;
+  }
+
+  .stat .v.pair {
+    grid-template-columns: auto auto;
+    gap: 10px;
   }
 }
 
@@ -665,6 +943,12 @@ a.btn {
 .stat .sub {
   font-size: 11px;
   color: var(--ink-dim);
+}
+
+/* The cost tile's subtitle is two figures that must not break apart mid-number:
+   on a narrow tile "总费用" and its amount belong on the same line. */
+.stat .sub > span {
+  white-space: nowrap;
 }
 
 /* The sparkline behind a summary tile, drawn from the live speed samples. */
@@ -796,38 +1080,70 @@ a.btn {
   white-space: nowrap;
 }
 
-/* The status lamp: a chrome-ringed LED. */
+/* The status lamp: a chrome-ringed LED. It is the card's only status readout
+   now that the text badge is gone, so it is sized and lit to be found from a
+   step back -- one scan of the page should separate the live nodes from the
+   rest without reading a word. */
 .lamp {
   flex: none;
-  width: 11px;
-  height: 11px;
+  width: 15px;
+  height: 15px;
   border-radius: 50%;
-  border: 1px solid rgba(0, 0, 0, 0.55);
-  background: radial-gradient(circle at 35% 30%, #fff8, transparent 55%), var(--bad);
-  box-shadow: 0 0 8px var(--bad), inset 0 0 3px rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(0, 0, 0, 0.6);
+  background: radial-gradient(circle at 35% 30%, #fff9, transparent 58%), var(--bad);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.14),
+    0 0 12px 1px var(--bad),
+    inset 0 0 4px rgba(0, 0, 0, 0.65);
 }
 
+/* Online: the brightest thing on the card. A wide outer bloom plus a tight core
+   glow is what makes an LED read as *lit* rather than merely green, and the
+   slow pulse gives the eye something to catch on a page that is otherwise
+   still. */
 .lamp[data-on="true"] {
-  background: radial-gradient(circle at 35% 30%, #fff8, transparent 55%), var(--ok);
-  box-shadow: 0 0 10px var(--ok), inset 0 0 3px rgba(0, 0, 0, 0.6);
+  background: radial-gradient(circle at 35% 30%, #fff, transparent 60%), var(--ok);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.22),
+    0 0 8px 2px var(--ok),
+    0 0 20px 4px color-mix(in srgb, var(--ok) 55%, transparent),
+    inset 0 0 5px rgba(0, 0, 0, 0.5);
   animation: pulse 2.4s var(--ease) infinite;
 }
 
 /* Connected but not yet reporting: amber, and still. Green would promise figures
    that are not there yet, red would call a live agent down. */
 .lamp[data-pending="true"] {
-  background: radial-gradient(circle at 35% 30%, #fff8, transparent 55%), var(--warn);
-  box-shadow: 0 0 9px var(--warn), inset 0 0 3px rgba(0, 0, 0, 0.6);
+  background: radial-gradient(circle at 35% 30%, #fffa, transparent 58%), var(--warn);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.16),
+    0 0 8px 1px var(--warn),
+    0 0 16px 3px color-mix(in srgb, var(--warn) 40%, transparent),
+    inset 0 0 4px rgba(0, 0, 0, 0.6);
   animation: none;
+}
+
+/* Offline and broken reports: dark, so the lit lamps stand out by contrast
+   rather than the down ones by colour alone. */
+.lamp[data-on="false"] {
+  opacity: 0.75;
 }
 
 @keyframes pulse {
   0%,
   100% {
-    box-shadow: 0 0 8px var(--ok), inset 0 0 3px rgba(0, 0, 0, 0.6);
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.22),
+      0 0 8px 2px var(--ok),
+      0 0 18px 3px color-mix(in srgb, var(--ok) 45%, transparent),
+      inset 0 0 5px rgba(0, 0, 0, 0.5);
   }
   50% {
-    box-shadow: 0 0 16px var(--ok), inset 0 0 3px rgba(0, 0, 0, 0.6);
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.3),
+      0 0 12px 3px var(--ok),
+      0 0 30px 8px color-mix(in srgb, var(--ok) 72%, transparent),
+      inset 0 0 5px rgba(0, 0, 0, 0.5);
   }
 }
 
@@ -885,6 +1201,32 @@ a.btn {
   align-items: baseline;
   justify-items: center;
   column-gap: 4px;
+}
+
+/* Latency over loss: two stacked plates, each three equal columns, so the two
+   readouts line up under each other and under every other card in the list.
+   Tighter than the default plate gap because the pair is one reading, not two
+   rows of the card. */
+.latency-block {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.plate.probes > span {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+/* The loss row: the same three columns, tinted amber so it reads as a second
+   kind of measurement rather than a second latency figure, and set a touch
+   smaller because it is the exception, not the number anyone opens the page
+   for. */
+.plate.probes[data-loss="on"] {
+  font-size: 10px;
+  color: var(--warn);
 }
 
 .remark {
@@ -956,6 +1298,17 @@ a.btn {
   box-shadow: 0 0 12px color-mix(in srgb, var(--bad) 80%, transparent);
 }
 
+/* The empty meter on a card whose node is not reporting: the channel and its
+   cell mask stay, so the row is the same height and the columns still line up,
+   but nothing is lit and the reading is an em dash. */
+.meter[data-empty="true"] .trough {
+  opacity: 0.5;
+}
+
+.meter[data-empty="true"] .val {
+  color: var(--ink-faint);
+}
+
 /* The segmented LED look: a repeating mask cuts the fill into cells, and the
    same cell size is carried by a set of unlit tracks behind it. */
 .trough .cells {
@@ -1018,62 +1371,6 @@ a.btn {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 0 10px color-mix(in srgb, var(--bad) 35%, transparent);
 }
 
-/* ---------------------------------------------------------------- table --- */
-
-.table-wrap {
-  overflow-x: auto;
-  border-radius: var(--r-md);
-  border: 1px solid color-mix(in srgb, var(--accent) 26%, transparent);
-}
-
-table.nodes {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 12.5px;
-}
-
-table.nodes th {
-  position: sticky;
-  top: 0;
-  z-index: 1;
-  padding: 8px 10px;
-  text-align: left;
-  font-family: var(--font-data);
-  font-size: 10px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--ink-dim);
-  background: linear-gradient(180deg, var(--bg-2), var(--bg-1));
-  border-bottom: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
-  box-shadow: inset 0 1px 0 var(--edge-hi);
-  white-space: nowrap;
-}
-
-table.nodes td {
-  padding: 7px 10px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  vertical-align: middle;
-  white-space: nowrap;
-}
-
-table.nodes tbody tr {
-  cursor: pointer;
-  transition: background var(--dur) var(--ease);
-}
-
-table.nodes tbody tr:nth-child(odd) {
-  background: rgba(255, 255, 255, 0.022);
-}
-
-table.nodes tbody tr:hover {
-  background: color-mix(in srgb, var(--accent) 14%, transparent);
-}
-
-table.nodes .trough {
-  width: 90px;
-  height: 9px;
-}
-
 /* --------------------------------------------------------------- detail --- */
 
 .detail-head {
@@ -1121,12 +1418,14 @@ table.nodes .trough {
   overflow-wrap: anywhere;
 }
 
-/* One grid for every chart on the detail page, so the latency panel and the
-   resource panels are the same instrument rather than two. 460px per column
-   puts two side by side on a desktop and one per row on a phone. */
+/* One column for every chart on the detail page. The resource panels used to sit
+   two to a row while the latency panel had a row to itself, which made the same
+   drawing read as two different instruments -- a scope and a widget. They are now
+   all full width and all 230px tall: the burned-in grid has room to read as a
+   scope face, and the eye does not have to re-learn the scale at each panel. */
 .charts {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: 14px;
 }
 

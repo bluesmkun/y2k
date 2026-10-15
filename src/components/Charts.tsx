@@ -182,6 +182,19 @@ export function Chart({
             onPointerLeave={() => setAt(null)}
             style={{ touchAction: "none" }}
           >
+            {/* The CRT face behind the trace: a dark phosphor floor with a fine
+                scanline raster burned into it, clipped to the plot area. Drawn
+                before the grid so the grid sits on top, the way a scope's
+                graticule is etched in front of the phosphor. */}
+            <defs>
+              <pattern id="scope-raster" width="4" height="4" patternUnits="userSpaceOnUse">
+                <rect width="4" height="2" fill="rgba(255,255,255,0.028)" />
+              </pattern>
+              <clipPath id="scope-clip">
+                <rect x={pad.l} y={pad.t} width={inner} height={plot} />
+              </clipPath>
+            </defs>
+
             {/* The recessed plot area, with the grid burned into it. */}
             <rect
               x={pad.l}
@@ -191,6 +204,14 @@ export function Chart({
               fill="rgba(0,0,0,0.28)"
               stroke="rgba(0,0,0,0.5)"
               strokeWidth="1"
+            />
+            <rect
+              x={pad.l}
+              y={pad.t}
+              width={inner}
+              height={plot}
+              fill="url(#scope-raster)"
+              pointerEvents="none"
             />
             {gridY.map((gy, i) => (
               <g key={i}>
@@ -228,10 +249,24 @@ export function Chart({
                     d={d}
                     fill="none"
                     stroke={s.color}
-                    strokeWidth="1.6"
+                    strokeWidth="3.4"
+                    strokeLinecap="round"
+                    opacity="0.28"
+                    clipPath="url(#scope-clip)"
+                    style={{ filter: `blur(3px)` }}
+                  />
+                ))}
+                {segments(s.values, x, y).map((d, i) => (
+                  <path
+                    key={i}
+                    d={d}
+                    fill="none"
+                    stroke={s.color}
+                    strokeWidth="1.5"
                     strokeLinecap="round"
                     strokeDasharray={s.dashed ? "4 4" : undefined}
-                    style={{ filter: `drop-shadow(0 0 3px ${s.color})` }}
+                    clipPath="url(#scope-clip)"
+                    style={{ filter: `drop-shadow(0 0 4px ${s.color})` }}
                   />
                 ))}
                 {dots(s.values, x, y).map((d, i) => (

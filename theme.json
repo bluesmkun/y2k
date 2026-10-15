@@ -2,22 +2,53 @@
   "name": "千禧年 Y2K",
   "short": "y2k",
   "description": "千禧年复古未来主义探针主题：铬合金、水蓝玻璃、霓虹与扫描线",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "author": "poooo",
   "url": "https://github.com/bluesmkun/y2k",
   "config": [
-    { "type": "title", "label": "外观" },
+    {
+      "type": "title",
+      "label": "外观"
+    },
     {
       "key": "skin",
       "type": "select",
       "label": "配色",
       "default": "aqua",
-      "help": "aqua 水蓝玻璃、chrome 液态铬、vapor 蒸汽波、matrix 终端绿",
+      "help": "八套配色，都是千禧年前后真实出现过的屏幕风格",
       "options": [
-        { "value": "aqua", "label": "Aqua 水蓝" },
-        { "value": "chrome", "label": "Chrome 液态铬" },
-        { "value": "vapor", "label": "Vaporwave 蒸汽波" },
-        { "value": "matrix", "label": "Matrix 终端绿" }
+        {
+          "value": "aqua",
+          "label": "Aqua 水蓝玻璃"
+        },
+        {
+          "value": "chrome",
+          "label": "Chrome 液态铬"
+        },
+        {
+          "value": "vapor",
+          "label": "Vaporwave 蒸汽波"
+        },
+        {
+          "value": "matrix",
+          "label": "Matrix 终端绿"
+        },
+        {
+          "value": "bubble",
+          "label": "Bubble 果冻粉"
+        },
+        {
+          "value": "amber",
+          "label": "Amber 琥珀单色"
+        },
+        {
+          "value": "ice",
+          "label": "Ice 冰蓝工作站"
+        },
+        {
+          "value": "sunrise",
+          "label": "Sunrise 千禧日出"
+        }
       ]
     },
     {
@@ -25,11 +56,40 @@
       "type": "select",
       "label": "背景",
       "default": "starfield",
+      "help": "背景与配色各自独立，可以随意搭配",
       "options": [
-        { "value": "starfield", "label": "星空" },
-        { "value": "grid", "label": "透视网格" },
-        { "value": "both", "label": "星空 + 网格" },
-        { "value": "plain", "label": "纯色" }
+        {
+          "value": "starfield",
+          "label": "星空"
+        },
+        {
+          "value": "grid",
+          "label": "透视网格"
+        },
+        {
+          "value": "both",
+          "label": "星空 + 网格"
+        },
+        {
+          "value": "sun",
+          "label": "千禧日落"
+        },
+        {
+          "value": "aurora",
+          "label": "极光"
+        },
+        {
+          "value": "rain",
+          "label": "数字雨"
+        },
+        {
+          "value": "horizon",
+          "label": "地平线"
+        },
+        {
+          "value": "plain",
+          "label": "纯色"
+        }
       ]
     },
     {
@@ -46,24 +106,16 @@
       "default": true,
       "help": "卡片顶部的镜面反光条"
     },
-
-    { "type": "title", "label": "首页" },
+    {
+      "type": "title",
+      "label": "首页"
+    },
     {
       "key": "notice",
       "type": "text",
       "label": "公告",
       "default": "",
       "help": "滚动显示在页头下方，留空不显示"
-    },
-    {
-      "key": "layout",
-      "type": "select",
-      "label": "布局",
-      "default": "grid",
-      "options": [
-        { "value": "grid", "label": "卡片" },
-        { "value": "table", "label": "表格" }
-      ]
     },
     {
       "key": "columns",
@@ -100,8 +152,10 @@
       "default": true,
       "help": "站长写给访客看的一行说明"
     },
-
-    { "type": "title", "label": "指标" },
+    {
+      "type": "title",
+      "label": "指标"
+    },
     {
       "key": "show_price",
       "type": "boolean",
@@ -135,16 +189,46 @@
       "help": "费用卡片的换算目标。选「原币种」则不请求汇率，各节点按自己的币种显示。",
       "default": "",
       "options": [
-        { "value": "", "label": "原币种（不换算）" },
-        { "value": "CNY", "label": "人民币 CNY ¥" },
-        { "value": "USD", "label": "美元 USD $" },
-        { "value": "EUR", "label": "欧元 EUR €" },
-        { "value": "JPY", "label": "日元 JPY ¥" },
-        { "value": "GBP", "label": "英镑 GBP £" },
-        { "value": "HKD", "label": "港币 HKD" },
-        { "value": "TWD", "label": "新台币 TWD" },
-        { "value": "SGD", "label": "新加坡元 SGD" },
-        { "value": "KRW", "label": "韩元 KRW" }
+        {
+          "value": "",
+          "label": "原币种（不换算）"
+        },
+        {
+          "value": "CNY",
+          "label": "人民币 CNY ¥"
+        },
+        {
+          "value": "USD",
+          "label": "美元 USD $"
+        },
+        {
+          "value": "EUR",
+          "label": "欧元 EUR €"
+        },
+        {
+          "value": "JPY",
+          "label": "日元 JPY ¥"
+        },
+        {
+          "value": "GBP",
+          "label": "英镑 GBP £"
+        },
+        {
+          "value": "HKD",
+          "label": "港币 HKD"
+        },
+        {
+          "value": "TWD",
+          "label": "新台币 TWD"
+        },
+        {
+          "value": "SGD",
+          "label": "新加坡元 SGD"
+        },
+        {
+          "value": "KRW",
+          "label": "韩元 KRW"
+        }
       ]
     },
     {

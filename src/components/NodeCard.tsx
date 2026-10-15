@@ -88,18 +88,30 @@ function LatencyPlate({ id, enabled }: { id: number; enabled: boolean }) {
   return (
     /* 每一格是一个运营商，按电信/联通/移动的固定顺序排列。一个运营商可能对应
        多个探针（电信V4、电信V6、电信 CN2），它们的延迟与丢包在这里已经合成
-       一个数（见 lib/latency）。列宽固定，所以三格里哪一格有没有数据，名字
-       和数值都落在同一条竖线上。 */
-    <div className="plate probes">
-      {rows.map((row) => (
-        <span key={row.id} style={{ display: "inline-flex", alignItems: "baseline", gap: 5 }}>
-          <span className="faint">{row.name}</span>
-          <span style={{ color: latencyTone(row.ms) }}>{row.ms === null ? "超时" : `${row.ms.toFixed(0)}ms`}</span>
-          {/* 丢包只在真有丢包时出现：一行里塞两个数字会把三格的宽度咬掉一块，
-             而丢包为 0 是常态，报出来是噪音。 */}
-          {(row.loss ?? 0) > 0 && <span className="faint" title={`丢包 ${row.loss!.toFixed(2)}%`}>↓{row.loss!.toFixed(0)}%</span>}
-        </span>
-      ))}
+       一个数（见 lib/latency）。
+
+       延迟与丢包分成两行：上面一行是三个运营商的延迟，下面一行是同一个运营
+       商的丢包。挤在一行里的时候，有丢包的格子会比别人宽出一截，三个数字就
+       再也对不齐了；分开之后每行各占三列，全国所有卡片的数字落在同一批竖线
+       上，扫一眼就能比。 */
+    <div className="latency-block">
+      <div className="plate probes">
+        {rows.map((row) => (
+          <span key={row.id}>
+            <span className="faint">{row.name}</span>
+            <span style={{ color: latencyTone(row.ms) }}>{row.ms === null ? "超时" : `${row.ms.toFixed(0)}ms`}</span>
+          </span>
+        ))}
+      </div>
+      {rows.some((row) => (row.loss ?? 0) > 0) && (
+        <div className="plate probes" data-loss="on">
+          {rows.map((row) => (
+            <span key={row.id} className={row.loss ? undefined : "faint"} title={row.loss ? `丢包 ${row.loss.toFixed(2)}%` : "无丢包"}>
+              {row.loss ? `↓${row.loss.toFixed(row.loss < 10 ? 1 : 0)}%` : "—"}
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -136,19 +148,20 @@ export function NodeCard({ node, onOpen }: { node: Node; onOpen: (id: number) =>
         {/* Three states, not two. A node that has connected but not yet reported
             is reachable -- `online` is true -- while carrying no figures, and a
             red lamp would call it down when the agent is in fact up. A broken
-            report keeps the red lamp: that one is a fault. */}
+            report keeps the red lamp: that one is a fault.
+
+            The lamp is the only status readout: a lit green LED with a wide
+            bloom, an amber one that is still, and a dark one for anything down.
+            The text badge that used to sit on the right said the same thing a
+            second time and pulled the eye away from the node name. */}
         <span
           className="lamp"
           data-on={node.online && !node.broken ? "true" : "false"}
           data-pending={node.online && !live && !node.broken ? "true" : undefined}
+          title={node.broken ? "上报异常" : !node.online ? "离线" : live ? "在线" : "等待上报"}
         />
         <span className="name" title={node.name}>
           {node.name}
-        </span>
-        {/* 状态也是一个徽标，不只是左侧那一颗灯。列表要一眼扫出哪几台掉了，
-            而一颗 8px 的灯在满屏卡片里并不显眼；文字写出来才扫得动。 */}
-        <span className="badge" data-tone={node.broken ? "bad" : !node.online ? "bad" : live ? "ok" : "warn"}>
-          {node.broken ? "上报异常" : !node.online ? "离线" : live ? "在线" : "等待上报"}
         </span>
         {showFlags && <Country code={node.country} />}
       </div>
@@ -167,6 +180,16 @@ export function NodeCard({ node, onOpen }: { node: Node; onOpen: (id: number) =>
         )}
       </div>
 
+      {/*
+        The live block keeps its rows even when there is nothing to put in them.
+        A node that is down used to collapse to a single line of prose, which
+        made its card a different height from its neighbours and left the list
+        with a hole in the middle of a row; worse, the rows below it (traffic,
+        latency, price) then sat at a different height than on every other card,
+        so nothing could be compared by scanning down a column. The rows stay,
+        the figures are replaced by an em dash, and the whole card dims -- which
+        is the more honest way to say "this machine is not reporting".
+      */}
       {live ? (
         <div className="meters">
           <Meter label="CPU" value={m.cpu} detail={`${m.cpu.toFixed(1)}%`} />
@@ -191,8 +214,25 @@ export function NodeCard({ node, onOpen }: { node: Node; onOpen: (id: number) =>
           )}
         </div>
       ) : (
-        <div className="plate" style={{ justifyContent: "center" }}>
-          <span>{quiet(node)}</span>
+        <div className="meters">
+          <Meter label="CPU" value={null} detail="—" />
+          <Meter label="内存" value={null} detail="—" />
+          <Meter label="硬盘" value={null} detail="—" />
+          {showNet && (
+            <div className="plate pair faint">
+              <span>↓ —</span>
+              <span>↑ —</span>
+            </div>
+          )}
+          {!compact && (
+            <div className="plate faint">
+              <span>负载 — / — / —</span>
+              <span className="sep">|</span>
+              <span>进程 —</span>
+              <span className="sep">|</span>
+              <span>连接 —</span>
+            </div>
+          )}
         </div>
       )}
 
@@ -213,7 +253,13 @@ export function NodeCard({ node, onOpen }: { node: Node; onOpen: (id: number) =>
       {showRemark && node.public_remark && <p className="remark">{node.public_remark}</p>}
 
       <div className="card-foot">
-        <span title="运行时长">运行 {live ? uptime(m.uptime) : "—"}</span>
+        {/* The reason a node is not reporting belongs on the foot, next to the
+            uptime it replaces. It used to occupy the whole live block, which
+            is what made a down card a different shape from every other card;
+            here it is one line that the foot already had room for. */}
+        <span title="运行时长" className={live ? undefined : "faint"}>
+          {live ? `运行 ${uptime(m.uptime)}` : quiet(node)}
+        </span>
         {showPrice && (node.price > 0 || expires !== undefined) && (
           <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>
             {node.price > 0 && <span>{money(node.price, node.currency)}</span>}

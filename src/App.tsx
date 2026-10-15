@@ -1,14 +1,12 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
 
 import { groupsOf, useNodes, type Node } from "@/lib/api"
-import { bytes, monthUsage, percent, rate, uptime } from "@/lib/format"
 import { markdown } from "@/lib/markdown"
 import { useFlag, useNumber, useText, useTheme } from "@/lib/theme"
-import { NodeCard, Country } from "@/components/NodeCard"
+import { NodeCard } from "@/components/NodeCard"
 import { NodeDetail } from "@/components/NodeDetail"
 import { Settings } from "@/components/Settings"
 import { Summary } from "@/components/Summary"
-import { Meter } from "@/components/Meter"
 
 /**
  * The route is a path, not a hash: the hub falls back to the theme's own
@@ -30,7 +28,6 @@ export function App() {
   const [tab, setTab] = useState<string | null>(null)
   const [settings, setSettings] = useState(false)
 
-  const layout = useText("layout", "grid")
   const columns = useNumber("columns", 3)
   const notice = useText("notice", "")
   const skin = useText("skin", "aqua")
@@ -39,8 +36,6 @@ export function App() {
   const glass = useFlag("glass", true)
   const showGroups = useFlag("show_groups", true)
   const showSummary = useFlag("show_summary", true)
-  const showTraffic = useFlag("show_traffic", true)
-  const showNet = useFlag("show_net", true)
   const showLatency = useFlag("show_latency", true)
   const compact = useFlag("compact", false)
 
@@ -102,7 +97,22 @@ export function App() {
 
   return (
     <>
-      <div className="backdrop" data-stars={backdrop === "starfield" || backdrop === "both" ? "on" : undefined} data-grid={backdrop === "grid" || backdrop === "both" ? "on" : undefined}>
+      {/* Every backdrop layer is always mounted and switched by a data attribute
+          on the parent: the layers are pure CSS, and mounting them conditionally
+          would re-run the backdrop's own animation on each switch. */}
+      <div
+        className="backdrop"
+        data-stars={backdrop === "starfield" || backdrop === "both" ? "on" : undefined}
+        data-grid={backdrop === "grid" || backdrop === "both" ? "on" : undefined}
+        data-sun={backdrop === "sun" ? "on" : undefined}
+        data-aurora={backdrop === "aurora" ? "on" : undefined}
+        data-rain={backdrop === "rain" ? "on" : undefined}
+        data-horizon={backdrop === "horizon" ? "on" : undefined}
+      >
+        <div className="sun" />
+        <div className="aurora" />
+        <div className="rain" />
+        <div className="horizon" />
         <div className="pgrid" />
       </div>
       {crt && <div className="crt" />}
@@ -208,15 +218,11 @@ export function App() {
                 </div>
               )}
 
-              {layout === "table" ? (
-                <Table nodes={shown} onOpen={openNode} showTraffic={showTraffic} showNet={showNet} />
-              ) : (
-                <div className="grid" style={{ ["--cols" as string]: columns }} data-compact={compact ? "true" : undefined}>
-                  {shown.map((n) => (
-                    <NodeCard key={n.id} node={n} onOpen={openNode} />
-                  ))}
-                </div>
-              )}
+              <div className="grid" style={{ ["--cols" as string]: columns }} data-compact={compact ? "true" : undefined}>
+                {shown.map((n) => (
+                  <NodeCard key={n.id} node={n} onOpen={openNode} />
+                ))}
+              </div>
 
               {shown.length === 0 && <div className="empty">这个分组下没有节点</div>}
             </>
@@ -329,82 +335,3 @@ function NodeDetailNoPing({ node, onBack }: { node: Node; onBack: () => void }) 
   return <NodeDetail node={node} onBack={onBack} hidePing />
 }
 
-function Table({
-  nodes,
-  onOpen,
-  showTraffic,
-  showNet,
-}: {
-  nodes: Node[]
-  onOpen: (id: number) => void
-  showTraffic: boolean
-  showNet: boolean
-}) {
-  return (
-    <div className="table-wrap">
-      <table className="nodes">
-        <thead>
-          <tr>
-            <th>节点</th>
-            <th>状态</th>
-            <th>CPU</th>
-            <th>内存</th>
-            <th>硬盘</th>
-            {showNet && <th>下行</th>}
-            {showNet && <th>上行</th>}
-            {showTraffic && <th>本月流量</th>}
-            <th>运行</th>
-          </tr>
-        </thead>
-        <tbody>
-          {nodes.map((n) => {
-            const m = n.metrics
-            const live = n.online && m !== null
-            // A row is a link to the node's page, so it is reachable and
-            // activatable from the keyboard rather than only by mouse.
-            const open = () => onOpen(n.id)
-            return (
-              <tr
-                key={n.id}
-                tabIndex={0}
-                role="link"
-                onClick={open}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault()
-                    open()
-                  }
-                }}
-              >
-                <td>
-                  <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                    <span
-                      className="lamp"
-                      data-on={n.online && !n.broken ? "true" : "false"}
-                      data-pending={n.online && !live && !n.broken ? "true" : undefined}
-                    />
-                    {n.name}
-                    <Country code={n.country} />
-                  </span>
-                </td>
-                <td>{live ? "在线" : n.broken ? "数据异常" : n.online ? "等待上报" : "离线"}</td>
-                <td>{m ? `${m.cpu.toFixed(1)}%` : "—"}</td>
-                <td>
-                  <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                    <Meter label="" value={m ? percent(m.mem_used, m.mem_total) : 0} detail="" />
-                    {m ? `${percent(m.mem_used, m.mem_total).toFixed(0)}%` : "—"}
-                  </span>
-                </td>
-                <td>{m ? `${percent(m.disk_used, m.disk_total).toFixed(0)}%` : "—"}</td>
-                {showNet && <td>{m ? rate(m.net_rx) : "—"}</td>}
-                {showNet && <td>{m ? rate(m.net_tx) : "—"}</td>}
-                {showTraffic && <td>{bytes(monthUsage(n))}</td>}
-                <td>{live && m ? uptime(m.uptime) : "—"}</td>
-              </tr>
-            )
-          })}
-        </tbody>
-      </table>
-    </div>
-  )
-}
