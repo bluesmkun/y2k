@@ -122,7 +122,6 @@ export function NodeCard({ node, onOpen }: { node: Node; onOpen: (id: number) =>
   const showNet = useFlag("show_net", true)
   const showLatency = useFlag("show_latency", true)
   const showRemark = useFlag("show_remark", true)
-  const compact = useFlag("compact", false)
 
   const m = node.metrics
   const live = node.online && m !== null
@@ -165,23 +164,31 @@ export function NodeCard({ node, onOpen }: { node: Node; onOpen: (id: number) =>
         {showFlags && <Country code={node.country} />}
       </div>
 
-      {/* One line, always. The three fields wrap when the distro name, the arch
-          and the kernel are all long, and a plate that is two lines tall in one
-          card and one line in the next pushes everything under it out of step
-          with the cards beside it. So the line is cut rather than wrapped, with
-          the whole of it on the plate's tooltip. */}
-      <div className="plate ellipsis" title={[osName(node.os) || "未知系统", `${node.arch || "?"} · ${node.cpu_cores} 核`, ...(compact ? [] : [`内核 ${node.kernel || "?"}`])].join(" · ")}>
-        <span>{osName(node.os) || "未知系统"}</span>
+      {/* The OS / arch / kernel line. A wide card keeps it on one line; a narrow
+          one breaks it in two, because the distro name is by far the longest of
+          the three fields and on one line it takes the width and pushes the
+          architecture and the kernel off the end -- the two fields that
+          actually differ between machines. The break is driven by the card's own
+          width, so every card in a row (all the same width) breaks the same way
+          and nothing drifts out of step down the list. The whole line is on the
+          tooltip, and each half still ends in an ellipsis.
+
+          The architecture and the kernel share one span so that the second line
+          is a single run: whatever room is left over after the architecture
+          goes to the kernel, which is the field that can afford to be cut. */}
+      <div
+        className="plate ellipsis"
+        title={[osName(node.os) || "未知系统", `${node.arch || "?"} · ${node.cpu_cores} 核`, `内核 ${node.kernel || "?"}`].join(" · ")}
+      >
+        <span className="spec-os">{osName(node.os) || "未知系统"}</span>
         <span className="sep">|</span>
-        <span>
-          {node.arch || "?"} · {node.cpu_cores} 核
+        <span className="spec-rest">
+          <span className="spec-arch">
+            {node.arch || "?"} · {node.cpu_cores} 核
+          </span>
+          <span className="sep">|</span>
+          <span className="spec-kernel">内核 {node.kernel || "?"}</span>
         </span>
-        {!compact && (
-          <>
-            <span className="sep">|</span>
-            <span>内核 {node.kernel || "?"}</span>
-          </>
-        )}
       </div>
 
       {/*
@@ -207,15 +214,13 @@ export function NodeCard({ node, onOpen }: { node: Node; onOpen: (id: number) =>
               <span style={{ color: "var(--accent)" }}>↑ {rate(m.net_tx)}</span>
             </div>
           )}
-          {!compact && (
-            <div className="plate">
-              <span>负载 {m.load.map((v) => v.toFixed(2)).join(" / ")}</span>
-              <span className="sep">|</span>
-              <span>进程 {m.procs}</span>
-              <span className="sep">|</span>
-              <span>连接 {m.tcp + m.udp}</span>
-            </div>
-          )}
+          <div className="plate">
+            <span>负载 {m.load.map((v) => v.toFixed(2)).join(" / ")}</span>
+            <span className="sep">|</span>
+            <span>进程 {m.procs}</span>
+            <span className="sep">|</span>
+            <span>连接 {m.tcp + m.udp}</span>
+          </div>
         </div>
       ) : (
         <div className="meters">
@@ -228,15 +233,13 @@ export function NodeCard({ node, onOpen }: { node: Node; onOpen: (id: number) =>
               <span>↑ —</span>
             </div>
           )}
-          {!compact && (
-            <div className="plate faint">
-              <span>负载 — / — / —</span>
-              <span className="sep">|</span>
-              <span>进程 —</span>
-              <span className="sep">|</span>
-              <span>连接 —</span>
-            </div>
-          )}
+          <div className="plate faint">
+            <span>负载 — / — / —</span>
+            <span className="sep">|</span>
+            <span>进程 —</span>
+            <span className="sep">|</span>
+            <span>连接 —</span>
+          </div>
         </div>
       )}
 

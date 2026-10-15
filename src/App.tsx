@@ -63,7 +63,6 @@ export function App() {
   const showGroups = useFlag("show_groups", true)
   const showSummary = useFlag("show_summary", true)
   const showLatency = useFlag("show_latency", true)
-  const compact = useFlag("compact", false)
 
   // The palette variables are read by `body`, the backdrop and the settings
   // drawer, none of which are inside `div.window`; binding the skin to the root
@@ -240,7 +239,7 @@ export function App() {
                 </div>
               )}
 
-              <div className="grid" data-compact={compact ? "true" : undefined}>
+              <div className="grid">
                 {shown.map((n) => (
                   <NodeCard key={n.id} node={n} onOpen={openNode} />
                 ))}

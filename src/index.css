@@ -411,7 +411,6 @@ body {
   color: var(--ink);
   background: var(--bg-0);
   -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
   overflow-x: hidden;
 }
 
@@ -432,7 +431,10 @@ body {
 .backdrop[data-stars="on"]::before {
   content: "";
   position: absolute;
-  inset: -50% -50%;
+  /* Just enough slack for the drift below to move a whole tile without ever
+     exposing an edge. `-50%` would cover the same motion at four times the
+     area, i.e. four times the texture a phone has to hold to draw some dots. */
+  inset: -280px -360px;
   background-image:
     radial-gradient(1px 1px at 20px 30px, rgba(255, 255, 255, 0.9), transparent),
     radial-gradient(1px 1px at 90px 120px, rgba(180, 220, 255, 0.7), transparent),
@@ -448,7 +450,10 @@ body {
 .backdrop[data-stars="on"]::after {
   content: "";
   position: absolute;
-  inset: -50% -50%;
+  /* Just enough slack for the drift below to move a whole tile without ever
+     exposing an edge. `-50%` would cover the same motion at four times the
+     area, i.e. four times the texture a phone has to hold to draw some dots. */
+  inset: -280px -360px;
   background-image:
     radial-gradient(1px 1px at 12px 44px, rgba(255, 255, 255, 0.7), transparent),
     radial-gradient(1px 1px at 130px 12px, rgba(255, 230, 255, 0.6), transparent),
@@ -640,7 +645,14 @@ body {
 }
 
 /* CRT: scanlines and a vignette. Both are pure overlays, so text stays crisp
-   underneath; the setting is there for operators who would rather read clean. */
+   underneath; the setting is there for operators who would rather read clean.
+
+   One layer, not two. Each pseudo-element here is a texture the size of the
+   viewport that the compositor holds for the life of the page -- about 15 MB
+   apiece on a tablet at 2x -- and the two together buy nothing that one
+   background of two layers does not. Merging them means the scanlines' own
+   opacity has to be folded into their colour (0.16 x 0.55), since the element no
+   longer has an opacity to itself. */
 .crt {
   position: fixed;
   inset: 0;
@@ -652,31 +664,15 @@ body {
   content: "";
   position: absolute;
   inset: 0;
-  background: repeating-linear-gradient(
-    to bottom,
-    rgba(0, 0, 0, 0.16) 0px,
-    rgba(0, 0, 0, 0.16) 1px,
-    transparent 1px,
-    transparent 3px
-  );
-  opacity: 0.55;
-}
-
-.crt::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(120% 100% at 50% 50%, transparent 55%, rgba(0, 0, 0, 0.55) 100%);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .backdrop::before,
-  .backdrop::after,
-  .backdrop .pgrid,
-  .backdrop .aurora,
-  .backdrop .rain {
-    animation: none;
-  }
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0.088) 0px,
+      rgba(0, 0, 0, 0.088) 1px,
+      transparent 1px,
+      transparent 3px
+    ),
+    radial-gradient(120% 100% at 50% 50%, transparent 55%, rgba(0, 0, 0, 0.55) 100%);
 }
 
 /* ------------------------------------------------------------- primitives -- */
@@ -703,8 +699,32 @@ body {
     inset 0 1px 0 var(--edge-hi),
     inset 0 -1px 0 var(--edge-lo),
     0 10px 28px rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(9px) saturate(135%);
-  -webkit-backdrop-filter: blur(9px) saturate(135%);
+}
+
+/* The frosting, and the most expensive thing in the theme: the compositor has to
+   sample and blur whatever is behind the panel, and a screenful of cards means a
+   screenful of blurs re-formed on every frame the page moves. On a phone or a
+   tablet that is felt as heat as much as as jank, and it is the one effect here
+   that scales with the number of nodes.
+
+   So it is painted only where it can be seen properly: a pointer that can
+   actually hover, and a window wide enough for the backdrop to read through the
+   glass. Everywhere else the panel keeps its translucent slab, which at these
+   opacities is very nearly the same picture -- what is lost is the blur of the
+   starfield behind it, and the starfield is barely visible through a 0.72 panel
+   to begin with. */
+@media (hover: hover) and (pointer: fine) and (min-width: 901px) {
+  .panel {
+    backdrop-filter: blur(7px) saturate(135%);
+    -webkit-backdrop-filter: blur(7px) saturate(135%);
+  }
+}
+
+/* The theme's own 玻璃 setting: off means flat panels rather than a slow page. */
+.window[data-glass="off"] .panel,
+.window[data-glass="off"] .drawer .sheet {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 /* The mirror highlight along the top of a glass slab. */
@@ -764,12 +784,14 @@ body {
   white-space: nowrap;
 }
 
-.btn:hover {
-  filter: brightness(1.25);
-  box-shadow:
-    inset 0 1px 0 var(--edge-hi),
-    inset 0 -1px 0 var(--edge-lo),
-    0 0 14px color-mix(in srgb, var(--accent) 55%, transparent);
+@media (hover: hover) {
+  .btn:hover {
+    filter: brightness(1.25);
+    box-shadow:
+      inset 0 1px 0 var(--edge-hi),
+      inset 0 -1px 0 var(--edge-lo),
+      0 0 14px color-mix(in srgb, var(--accent) 55%, transparent);
+  }
 }
 
 .btn:active {
@@ -990,8 +1012,10 @@ a.btn {
   padding-right: 64px;
 }
 
-.notice:hover .roll {
-  animation-play-state: paused;
+@media (hover: hover) {
+  .notice:hover .roll {
+    animation-play-state: paused;
+  }
 }
 
 @keyframes roll {
@@ -1158,8 +1182,10 @@ a.btn {
   transition: color var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
 }
 
-.tab:hover {
-  color: var(--ink);
+@media (hover: hover) {
+  .tab:hover {
+    color: var(--ink);
+  }
 }
 
 .tab[data-on="true"] {
@@ -1199,16 +1225,37 @@ a.btn {
   color: inherit;
   cursor: pointer;
   font: inherit;
+  /* A card is its own width container: the spec line below has to decide whether
+     it has room for one line or needs two, and the answer depends on how wide
+     the card is rather than on how wide the window is -- the grid puts two or
+     three cards in a row, and 330px is both a very different line length and a
+     very different window depending on that. Every card in a row is the same
+     width, so they all decide the same way and the rows stay in step. */
+  container-type: inline-size;
+  /* Cards that are off screen are not painted at all. On a long list that is
+     most of the work the browser would otherwise do: each card carries two
+     large blurred shadows, a glass highlight and several gradients, and none of
+     that is worth rastering for a card nobody can see. `auto` in
+     contain-intrinsic-size remembers the height from the last time the card was
+     rendered, so the scrollbar settles after the first pass instead of using
+     the fallback. */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 336px;
   transition: transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease), border-color var(--dur) var(--ease);
 }
 
-.card:hover {
-  transform: translateY(-2px);
-  border-color: color-mix(in srgb, var(--accent) 62%, transparent);
-  box-shadow:
-    inset 0 1px 0 var(--edge-hi),
-    0 0 22px color-mix(in srgb, var(--accent) 32%, transparent),
-    0 14px 32px rgba(0, 0, 0, 0.55);
+/* Hover only where there is a pointer that can hover. On a touch screen the
+   hover state sticks to whatever was tapped last, so a card stays lifted and
+   outlined after the finger is gone. */
+@media (hover: hover) {
+  .card:hover {
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--accent) 62%, transparent);
+    box-shadow:
+      inset 0 1px 0 var(--edge-hi),
+      0 0 22px color-mix(in srgb, var(--accent) 32%, transparent),
+      0 14px 32px rgba(0, 0, 0, 0.55);
+  }
 }
 
 /* An offline card is dimmed rather than hidden. It keeps its place in the grid
@@ -1257,6 +1304,7 @@ a.btn {
    step back -- one scan of the page should separate the live nodes from the
    rest without reading a word. */
 .lamp {
+  position: relative;
   flex: none;
   width: 15px;
   height: 15px;
@@ -1270,9 +1318,15 @@ a.btn {
 }
 
 /* Online: the brightest thing on the card. A wide outer bloom plus a tight core
-   glow is what makes an LED read as *lit* rather than merely green, and the
-   slow pulse gives the eye something to catch on a page that is otherwise
-   still. */
+   glow is what makes an LED read as *lit* rather than merely green, and the slow
+   pulse gives the eye something to catch on a page that is otherwise still.
+
+   The bloom is the lamp's own box-shadow, painted once and left alone. The pulse
+   is a separate ring that fades and scales, because animating the shadow itself
+   repaints the lamp on every frame, on every card, forever -- a dozen of those
+   at once is most of what this theme costs a phone: heat as much as jank, since
+   none of it stops when the card is scrolled out of view. Opacity and transform
+   run on the compositor instead, where the cost is a blend and nothing else. */
 .lamp[data-on="true"] {
   background: radial-gradient(circle at 35% 30%, #fff, transparent 60%), var(--ok);
   box-shadow:
@@ -1280,7 +1334,20 @@ a.btn {
     0 0 8px 2px var(--ok),
     0 0 20px 4px color-mix(in srgb, var(--ok) 55%, transparent),
     inset 0 0 5px rgba(0, 0, 0, 0.5);
-  animation: pulse 2.4s var(--ease) infinite;
+}
+
+.lamp[data-on="true"]::after {
+  content: "";
+  position: absolute;
+  inset: -7px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    transparent 45%,
+    color-mix(in srgb, var(--ok) 75%, transparent) 62%,
+    transparent 100%
+  );
+  animation: bloom 2.4s var(--ease) infinite;
 }
 
 /* Connected but not yet reporting: amber, and still. Green would promise figures
@@ -1292,7 +1359,6 @@ a.btn {
     0 0 8px 1px var(--warn),
     0 0 16px 3px color-mix(in srgb, var(--warn) 40%, transparent),
     inset 0 0 4px rgba(0, 0, 0, 0.6);
-  animation: none;
 }
 
 /* Offline and broken reports: dark, so the lit lamps stand out by contrast
@@ -1301,21 +1367,15 @@ a.btn {
   opacity: 0.75;
 }
 
-@keyframes pulse {
+@keyframes bloom {
   0%,
   100% {
-    box-shadow:
-      0 0 0 1px rgba(255, 255, 255, 0.22),
-      0 0 8px 2px var(--ok),
-      0 0 18px 3px color-mix(in srgb, var(--ok) 45%, transparent),
-      inset 0 0 5px rgba(0, 0, 0, 0.5);
+    opacity: 0.5;
+    transform: scale(0.86);
   }
   50% {
-    box-shadow:
-      0 0 0 1px rgba(255, 255, 255, 0.3),
-      0 0 12px 3px var(--ok),
-      0 0 30px 8px color-mix(in srgb, var(--ok) 72%, transparent),
-      inset 0 0 5px rgba(0, 0, 0, 0.5);
+    opacity: 1;
+    transform: scale(1.22);
   }
 }
 
@@ -1354,6 +1414,58 @@ a.btn {
 
 .plate.ellipsis .sep {
   margin: 0 6px;
+}
+
+/* A card too narrow for the whole line gets it in two: the distro name on the
+   first, the architecture and the kernel on the second. One line only works if
+   there is room for all three, and the distro name is the longest -- on a tablet
+   (a card around 340px, a name often 30 characters) it takes the whole width and
+   the card stops saying which machine it is, which is the only reason to print
+   the line at all.
+
+   460px is where the longest realistic line starts to fit: "Debian GNU/Linux 12
+   (bookworm) | x86_64 · 4 核 | 内核 6.1.0-13-amd64" is about 430px in the data
+   font. It is the card's own width that is measured, so every card in a row
+   breaks the same way and the plate is one height across the list -- which is
+   what the single line was protecting in the first place. */
+@container (max-width: 460px) {
+  .plate.ellipsis > .spec-os {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* The second line: the architecture keeps its natural width, the kernel takes
+     what is left and is the one that gives way. Both can shrink, so neither can
+     push the other out of the plate. */
+  .plate.ellipsis > .spec-rest {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    margin-top: 1px;
+  }
+
+  .plate.ellipsis .spec-arch,
+  .plate.ellipsis .spec-kernel {
+    flex: 0 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .plate.ellipsis .spec-kernel {
+    flex: 1 1 auto;
+  }
+
+  /* The separator between the name and the architecture; the one on the second
+     line is not a child of the plate, so it stays. */
+  .plate.ellipsis > .sep {
+    display: none;
+  }
+
+  .plate.ellipsis .spec-rest > .sep {
+    margin: 0;
+  }
 }
 
 /* Node cards carry a status lamp in the head and nothing in the body, so the
@@ -1993,4 +2105,54 @@ a {
 ::selection {
   background: color-mix(in srgb, var(--accent) 55%, transparent);
   color: #04121f;
+}
+
+/* ================================================================ overrides --
+   Last, on purpose.
+
+   Both blocks below switch animations off, and the rules they switch off are
+   written with attribute selectors (`.lamp[data-on="true"]::after`) that are
+   just as specific as these are. Sitting up among the components -- where they
+   were -- they lost to those rules on source order and quietly did nothing, so
+   `prefers-reduced-motion` still ran eight animations. Overrides go at the end.
+   ========================================================================= */
+
+/* Anyone who has asked their system for less motion. */
+@media (prefers-reduced-motion: reduce) {
+  .backdrop[data-stars="on"]::before,
+  .backdrop[data-stars="on"]::after,
+  .backdrop[data-grid="on"] .pgrid,
+  .backdrop[data-aurora="on"] .aurora,
+  .backdrop[data-rain="on"] .rain,
+  .lamp[data-on="true"]::after,
+  .notice .roll[data-rolling="true"],
+  .skeleton {
+    animation: none;
+  }
+
+  .card {
+    transition: none;
+  }
+}
+
+/* Touch devices: no ambient motion at all, whatever the setting says. The
+   starfield, the perspective grid, the aurora and the rain animate forever, and
+   on a phone or a tablet that is a battery spent on a decoration behind a 0.72
+   panel that is usually covered by cards anyway. A coarse pointer is the honest
+   test -- these are the devices on battery -- and the layers keep their shape,
+   so only the movement goes. */
+@media (hover: none) and (pointer: coarse) {
+  .backdrop[data-stars="on"]::before,
+  .backdrop[data-stars="on"]::after,
+  .backdrop[data-grid="on"] .pgrid,
+  .backdrop[data-aurora="on"] .aurora,
+  .backdrop[data-rain="on"] .rain {
+    animation: none;
+  }
+
+  /* The LED keeps its glow; only the bloom stops moving. */
+  .lamp[data-on="true"]::after {
+    animation: none;
+    opacity: 0.7;
+  }
 }

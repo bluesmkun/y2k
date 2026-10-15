@@ -2,7 +2,7 @@
   "name": "千禧年 Y2K",
   "short": "y2k",
   "description": "千禧年复古未来主义探针主题：铬合金、水蓝玻璃、霓虹与扫描线",
-  "version": "1.4.3",
+  "version": "1.4.4",
   "author": "poooo",
   "url": "https://github.com/bluesmkun/y2k",
   "config": [
@@ -249,13 +249,6 @@
       "label": "汇率接口",
       "help": "默认 open.er-api.com（免费、无需密钥）。可换成自建镜像；留空则用默认值。",
       "default": "https://open.er-api.com/v6/latest/USD"
-    },
-    {
-      "key": "compact",
-      "type": "boolean",
-      "label": "紧凑卡片",
-      "default": false,
-      "help": "隐藏内核、架构等次要信息，一屏放下更多节点"
     }
   ]
 }
