@@ -38,8 +38,29 @@ export function pair(used: number, total: number): string {
  * lines up with the figures around it.
  */
 export function pairShort(used: number, total: number): string {
+  // A machine with no disk of its own -- a NAT box, a container -- reports zero
+  // for both figures, and `unitOf(0)` is -Infinity, so the unit resolved to
+  // `undefined` and the card printed "NaN / NaN undefined" across the rail. A
+  // hub may also leave the used figure out entirely; that is "not measured", not
+  // "nothing", so it reads as an em dash rather than as a zero.
+  if (!(total > 0) && !(used > 0)) return `${bytes(used)} / ${bytes(total)}`
   const i = total > 0 ? unitOf(total) : unitOf(used)
-  const f = (n: number) => `${Number((n / 1024 ** i).toFixed(i === 0 ? 0 : 2))}`
+  // Each figure keeps only the decimals its own magnitude earns -- the same
+  // ladder `bytes` uses, so a reading is formatted the same way wherever it
+  // appears. Two decimals of a gigabyte on a 952 GB disk are noise, and they
+  // were also the reason the reading did not fit: at three of them "617.13 /
+  // 952.21 MB" is nineteen characters, and in the monospace font a tablet
+  // resolves (wider than the desktop one) the unit fell off the end of the rail
+  // it has to sit in. Capped this way neither figure is longer than four
+  // characters plus its decimals, which the reading column holds on every
+  // device. Both keep the total's unit, so the pair still reads as one
+  // measurement.
+  const f = (n: number) => {
+    if (!Number.isFinite(n)) return "—"
+    const v = n / 1024 ** i
+    const digits = i === 0 ? 0 : v >= 100 ? 0 : v >= 10 ? 1 : 2
+    return `${Number(v.toFixed(digits))}`
+  }
   return `${f(used)} / ${f(total)} ${UNITS[i]}`
 }
 

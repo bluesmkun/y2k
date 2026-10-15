@@ -28,11 +28,35 @@
      fixed rather than sized by their content: they are the two rails every bar
      is drawn between, so a reading that is four characters wide in one row and
      eighteen in the next must not move the rail. The reading is set in the data
-     font, so its width is the character count times a known advance -- fifteen
-     of them covers the longest figure the card writes ("500 / 1000 GB", and
-     "1310 / 500 GB" on a plan used past its quota). */
-  --meter-label: 36px;
-  --meter-val: 92px;
+     font, so its width is the character count times a known advance.
+
+     Both are expressed in the units of the text they hold, not in pixels,
+     because the pixel width of a character is the one thing the theme cannot
+     know: `--font-data` resolves to Consolas on Windows, Menlo on a Mac, SF Mono
+     on an iPhone or iPad and whatever the OEM ships on Android, and those
+     advances differ by more than ten percent. A 92px rail written for Consolas
+     holds fifteen characters; on a tablet, where SF Mono is a fifth wider, it
+     holds thirteen, and a reading that fits on a laptop came back from the
+     tablet with its unit cut off. `ch` is the advance of one character in
+     whatever font is actually being used, so the rail holds the same number of
+     characters everywhere -- which is what makes it a rail.
+
+     15ch is the widest a reading gets: a pair is at most four digits, a slash
+     and four more in the same unit (`1024 / 1024 MB`), which is fourteen
+     characters.
+
+     3.6em of the label's own 10px is 36px, the width the widest label needs
+     (不限量, three full-width characters plus the letter spacing). */
+  --meter-label: 3.6em;
+  --meter-val: 15ch;
+
+  /* How far a boxed row's text sits inside its box: the plate's own padding plus
+     its border. The unboxed rows (the meters, the head, the foot) add the same
+     inset to themselves, so every reading in a card starts and ends on the same
+     two vertical lines -- without it the rows inside plates sat 8px in from the
+     rows that are not, and the numbers down a card landed on two different
+     right-hand edges. */
+  --plate-inset: 8px;
 
   --dur: 180ms;
   --ease: cubic-bezier(0.2, 0.7, 0.3, 1);
@@ -1286,6 +1310,9 @@ a.btn {
   align-items: center;
   gap: 8px;
   min-width: 0;
+  /* The rows inside plates are inset by their own padding; the head is not in a
+     plate, so it carries the same inset itself. See `--plate-inset`. */
+  padding-inline: var(--plate-inset);
 }
 
 .card-head .name {
@@ -1479,7 +1506,7 @@ a.btn {
    whatever the font does to their widths. */
 .plate.pair {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   align-items: baseline;
 }
 
@@ -1556,6 +1583,7 @@ a.btn {
 
 .remark {
   margin: 0;
+  padding-inline: var(--plate-inset);
   font-size: 11.5px;
   color: var(--ink-dim);
   overflow-wrap: anywhere;
@@ -1574,16 +1602,26 @@ a.btn {
    every card of a row, starts and ends on the same two vertical lines. Sized by
    their content instead, the reading column would be five characters wide on the
    CPU row and eighteen on the disk row, and the three bars would visibly differ
-   in length, which is the one thing a row of bars is for. */
+   in length, which is the one thing a row of bars is for.
+
+   `max-content` against children that carry an explicit width: the width is
+   resolved on the child, in the child's own font, which is the only place those
+   units mean anything (`ch` on the grid container would be measured in the UI
+   font at the container's size, not in the data font at the reading's). All four
+   rows resolve to the same pair of widths, so the rails still line up. */
 .meter {
   display: grid;
-  grid-template-columns: var(--meter-label) minmax(0, 1fr) var(--meter-val);
+  grid-template-columns: max-content minmax(0, 1fr) max-content;
   align-items: center;
   gap: 7px;
+  /* The bare rows take the plate's inner inset, so a reading in a meter and a
+     reading in a plate above it sit on the same two lines. See `--plate-inset`. */
+  padding-inline: var(--plate-inset);
   font-size: 11px;
 }
 
 .meter .label {
+  width: var(--meter-label);
   font-family: var(--font-data);
   font-size: 10px;
   letter-spacing: 0.08em;
@@ -1592,6 +1630,7 @@ a.btn {
 }
 
 .meter .val {
+  width: var(--meter-val);
   font-family: var(--font-data);
   font-variant-numeric: tabular-nums;
   text-align: right;
@@ -1687,6 +1726,10 @@ a.btn {
   gap: 8px;
   flex-wrap: wrap;
   padding-top: 8px;
+  /* The rule above spans the card's content width, like the plates; the text on
+     it takes the same inset they do, so the foot's left and right ends land on
+     the same lines as every reading above it. */
+  padding-inline: var(--plate-inset);
   margin-top: auto;
   border-top: 1px dashed color-mix(in srgb, var(--accent) 24%, transparent);
   font-family: var(--font-data);
