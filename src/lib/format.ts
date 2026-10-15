@@ -141,6 +141,44 @@ export function monthlyCost(node: { price: number; billing_cycle: string }): num
 }
 
 /**
+ * What a node is still worth: the part of its period that has not run out yet.
+ *
+ * The hub stores a price, the cycle it covers, and the date it renews, so the
+ * remaining value is the price spread evenly over the cycle and cut at today:
+ * a $120 yearly plan with 90 days left is worth $120 * 90/365. That is the
+ * straight-line reading of a prepaid period, and it is the one that answers
+ * "how much have I already paid for time I have not used".
+ *
+ * Two shapes have no remaining period and are worth 0, not their price:
+ *
+ *   `once`     the money was spent when it was bought, and there is no period
+ *              running down -- the same reason it has no monthly cost;
+ *   no expiry  a node that never expires has no date to count down to, so
+ *              there is no share of it that has "run out".
+ *
+ * An expired node is 0 too: the period is over, whatever it was worth before.
+ */
+export function residualValue(node: { price: number; billing_cycle: string; expires_at?: string | null; expires_in?: number | null }): number {
+  const price = node.price
+  if (!(price > 0)) return 0
+  const months = cycleMonths(node.billing_cycle)
+  // No period, no expiry: nothing is running down. See the two shapes above.
+  if (months <= 0) return 0
+  // `expires_in` is the hub's own day count and is already in the hub's
+  // calendar; only fall back to the stored date when it is absent, the way the
+  // card's own badge does. `null` there means "no expiry", not "unknown".
+  const left = node.expires_in !== undefined ? node.expires_in : daysUntil(node.expires_at)
+  if (left === null || left === undefined || left <= 0) return 0
+  // A cycle's own length, in days, from the months it covers. The hub bills in
+  // whole months, so 30.44 days each is closer to a year than 365/12 rounded.
+  const span = months * (365.25 / 12)
+  // A remaining span longer than the cycle is a clock disagreement, not a
+  // bargain: cap it so a stale `expires_in` cannot report more value than the
+  // node was bought for.
+  return price * Math.min(left / span, 1)
+}
+
+/**
  * Whether a node's renewal falls in the calendar month the viewer is in. This is
  * the one figure on the page that uses the browser's clock, because "this month"
  * is a question about the reader's calendar rather than about the hub's: the

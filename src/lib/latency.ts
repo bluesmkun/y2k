@@ -17,13 +17,15 @@ import { api } from "@/lib/api"
  *   - at most `MAX` requests are open at once, so a page of forty cards walks
  *     through the hub instead of arriving on it as a burst;
  *   - a hidden tab stops asking, matching what the socket already does.
+ *
+ * What a card shows is carriers, not probes: see `CARRIERS`.
  */
 
-/** One probe's current reading, named from the response's own `probes` map. */
-export type Latency = { id: number; name: string; ms: number | null }[]
+/** One carrier's current reading, averaged over every probe that maps to it. */
+export type Latency = { id: string; name: string; ms: number | null; loss: number | null }[]
 
-type PingRow = { task_id: number; ts: number; latency: number | null }
-type Reply = { ping?: PingRow[]; probes?: Record<string, string> }
+type PingRow = { task_id: number; ts: number; latency: number | null; loss?: number }
+type Reply = { ping?: PingRow[]; probes?: Record<string, string>; loss?: Record<string, number> }
 
 /** How long an answer stays good. The socket pushes metrics every 2s; latency is
  *  a slower thing to look at, and asking on that cadence would be a burst of
@@ -34,12 +36,32 @@ const MAX = 4
 const SMOOTH = 5
 
 /**
- * How many probes a card shows. A node can carry a dozen probes and the card
- * has room for a line of three; the rest are the detail page's job. The order is
- * the response's own -- first occurrence of each task_id -- so what a card
- * shows is what the hub put first, not an arbitrary pick.
+ * The three carriers a card reports, in the order they are drawn. A hub can
+ * carry several probes for the same carrier -- 电信V4, 电信V6, 电信 上海 -- and a
+ * card that listed them separately would spend its whole line on one network
+ * while the other two went unmentioned. So the card speaks in carriers: every
+ * probe whose name contains one of these words is folded into that carrier.
  */
-export const CARD_PROBES = 3
+const CARRIERS = [
+  { key: "telecom", name: "电信", match: ["电信"] },
+  { key: "unicom", name: "联通", match: ["联通"] },
+  { key: "mobile", name: "移动", match: ["移动"] },
+] as const
+
+export type CarrierKey = (typeof CARRIERS)[number]["key"]
+
+/**
+ * Which carrier a probe belongs to, or null when its name matches none. Matching
+ * is a plain substring test on the probe's own name, because that name is the
+ * only thing the hub gives: 电信V6, 电信 CN2, 上海电信 all carry 电信 and all mean
+ * the same network to a reader.
+ */
+export function carrierOf(name: string): string | null {
+  for (const c of CARRIERS) if (c.match.some((word) => name.includes(word))) return c.key
+  return null
+}
+
+/** The carriers in draw order, resolved from the response's own probe names. */
 
 const cache = new Map<number, { at: number; rows: Latency }>()
 const inflight = new Map<number, Promise<Latency>>()
@@ -64,7 +86,12 @@ async function read(id: number): Promise<Latency> {
   const rows = data.ping ?? []
   const probes = data.probes ?? {}
   const ids = [...new Set(rows.map((p) => p.task_id))]
-  return ids.map((task) => {
+
+  // Every probe's own reading first, then the carriers are rebuilt from them:
+  // an average of averages would weight a carrier with three probes the same as
+  // one with a single probe only if the mean were taken over probes, which is
+  // exactly what this does not do -- see below.
+  const perProbe = ids.map((task) => {
     const own = rows.filter((p) => p.task_id === task)
     const recent: number[] = []
     // Newest first, skipping timeouts: a probe that just dropped one packet
@@ -74,8 +101,29 @@ async function read(id: number): Promise<Latency> {
       if (typeof v === "number" && Number.isFinite(v)) recent.push(v)
     }
     const ms = recent.length ? recent.reduce((sum, v) => sum + v, 0) / recent.length : null
-    return { id: task, name: probes[task] ?? `探测 ${task}`, ms }
-  }).slice(0, CARD_PROBES)
+    const name = probes[task] ?? `探测 ${task}`
+    return { name, ms, key: carrierOf(name), loss: data.loss?.[task] ?? null }
+  })
+
+  const out: Latency = []
+  for (const carrier of CARRIERS) {
+    const own = perProbe.filter((p) => p.key === carrier.key)
+    if (!own.length) continue
+    // The carrier's latency is the mean of the probes that answered. Probes that
+    // timed out are left out of the mean rather than counted as zero or as
+    // infinity: the figure is "how long the network takes", and a probe that
+    // never answered has no opinion on that. If every probe timed out the
+    // carrier shows a timeout, which is the honest reading of "none answered".
+    const answered = own.map((p) => p.ms).filter((v): v is number => v !== null)
+    const ms = answered.length ? answered.reduce((sum, v) => sum + v, 0) / answered.length : null
+    // Loss averages across the carrier's probes the same way, and is null only
+    // when the hub reported none for any of them -- 0 would claim a clean line
+    // for a carrier the hub said nothing about.
+    const losses = own.map((p) => p.loss).filter((v): v is number => v !== null)
+    const loss = losses.length ? losses.reduce((sum, v) => sum + v, 0) / losses.length : null
+    out.push({ id: carrier.key, name: carrier.name, ms, loss })
+  }
+  return out
 }
 
 function load(id: number): Promise<Latency> {

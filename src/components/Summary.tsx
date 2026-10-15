@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 
-import { bytes, dueThisMonth, money, monthUsage, monthlyCost, percent, rate } from "@/lib/format"
+import { bytes, money, monthUsage, monthlyCost, percent, rate, residualValue } from "@/lib/format"
 import { type Node } from "@/lib/api"
 import { rate as convert, DEFAULT_RATE_URL, useRates, type Rates } from "@/lib/rates"
 import { useText, useFlag } from "@/lib/theme"
@@ -56,8 +56,6 @@ export function Summary({ nodes }: { nodes: Node[] }) {
   const up = live.reduce((sum, n) => sum + (n.metrics?.net_tx ?? 0), 0)
 
   const paid = nodes.filter((n) => n.price > 0)
-  const monthly = paid.reduce((sum, n) => sum + monthlyCost(n), 0)
-  const due = paid.reduce((sum, n) => sum + (dueThisMonth(n.expires_at) ? n.price : 0), 0)
 
   return (
     <div className="summary">
@@ -94,26 +92,28 @@ export function Summary({ nodes }: { nodes: Node[] }) {
 
       {/* 显示价格与到期 also governs the cost tile: an operator who hides the
           prices on the cards does not want the fleet's bill in the header. */}
-      {showPrice && <Cost monthly={monthly} due={due} nodes={paid} currency={currency} rates={rates} />}
+      {showPrice && <Cost nodes={paid} currency={currency} rates={rates} />}
     </div>
   )
 }
 
 /**
- * The money tile. `monthly` and `due` are already summed in each node's own
- * currency, which is only meaningful when they are all the same one -- so a
- * mixed fleet is converted node by node and the totals are rebuilt from the
- * converted figures rather than from a converted total.
+ * The money tile. Two figures, both about the nodes currently on screen:
+ *
+ *   剩余价值    what the nodes are still worth -- the unused part of every
+ *               prepaid period, added up. This is the number that moves down on
+ *               its own as days pass, and the one that answers "how much of my
+ *               money is still tied up in these machines".
+ *   总费用      what they cost per month (each price divided by its cycle).
+ *
+ * Both follow the selected group tab, because `nodes` is already the filtered
+ * list: the tile is a readout of what is on screen, not of the fleet.
  */
 function Cost({
-  monthly,
-  due,
   nodes,
   currency,
   rates,
 }: {
-  monthly: number
-  due: number
   nodes: Node[]
   currency: string
   rates: Rates | null
@@ -128,28 +128,28 @@ function Cost({
   const converted = (() => {
     if (!nodes.length || !currency) return null
     if (!mixed) {
-      const per = convert(monthly, from, currency, rates)
-      const one = convert(due, from, currency, rates)
-      return per === null || one === null ? null : { monthly: per, due: one, missing: 0 }
+      const left = convert(nodes.reduce((sum, n) => sum + residualValue(n), 0), from, currency, rates)
+      const per = convert(nodes.reduce((sum, n) => sum + monthlyCost(n), 0), from, currency, rates)
+      return left === null || per === null ? null : { left, per, missing: 0 }
     }
-    let totalMonthly = 0
-    let totalDue = 0
+    let totalLeft = 0
+    let totalPer = 0
     let missing = 0
     for (const n of nodes) {
+      const left = convert(residualValue(n), n.currency, currency, rates)
       const per = convert(monthlyCost(n), n.currency, currency, rates)
-      const one = convert(n.price, n.currency, currency, rates)
-      if (per === null || one === null) {
+      if (left === null || per === null) {
         missing += 1
         continue
       }
-      totalMonthly += per
-      if (dueThisMonth(n.expires_at)) totalDue += one
+      totalLeft += left
+      totalPer += per
     }
     // Nothing converted at all (rates not loaded yet, or none of the currencies
     // is in the table): report the failure rather than a total of zero, which
     // would read as "this fleet is free".
     if (missing === nodes.length) return null
-    return { monthly: totalMonthly, due: totalDue, missing }
+    return { left: totalLeft, per: totalPer, missing }
   })()
 
   // With no display currency the original one is the truth -- but only while
@@ -182,19 +182,20 @@ function Cost({
     )
   }
 
-  // 只留两个数：总费用（每月合计）与本月费用（本月到期）。三级副标题
-  // 「每月合计 · 本月到期 ¥x · N 个无汇率」在小卡片上折成两行，而且
-  // 无汇率条是排查用的，不是访客要看的。保留缺失提示的口径改为主数字
-  // 后跟一个省略号徽标，仍能发现问题但不占版面。
-  const monthlyText = sum(converted?.monthly ?? monthly)
-  const dueText = sum(converted?.due ?? due)
+  // 主数字是剩余价值，副行给总费用。剩余价值比月成本更值得占主位：它每天都
+  // 在变，也是「这台机器还剩多少钱」的直接答案；月成本是个稳定的费率，放副行
+  // 就够。缺失汇率用省略号徽标挂在主数字后，不占一行版面。
+  const residual = nodes.reduce((sum, n) => sum + residualValue(n), 0)
+  const monthly = nodes.reduce((sum, n) => sum + monthlyCost(n), 0)
+  const leftText = sum(converted?.left ?? residual)
+  const perText = sum(converted?.per ?? monthly)
   const missing = show && converted ? converted.missing : 0
 
   return (
     <div className="stat panel">
       <div className="k">费用</div>
       <div className="v">
-        {monthlyText}
+        {leftText}
         {missing > 0 && (
           <span className="faint" title={`${missing} 个节点没有可用汇率，未计入合计`}>
             {" "}
@@ -203,8 +204,8 @@ function Cost({
         )}
       </div>
       <div className="sub">
-        <span>总费用</span>
-        <span className="faint"> · 本月 {dueText}</span>
+        <span>剩余价值</span>
+        <span className="faint"> · 总费用 {perText}</span>
       </div>
     </div>
   )

@@ -81,8 +81,6 @@ type Props = {
   format: (n: number) => string
   /** Marks the chart as a percentage of a known total. */
   unit?: string
-  /** Draw the area under a single series, as the summary sparkline does. */
-  area?: boolean
   /** Window width in hours, which decides the tick format. */
   hours: number
   /** Hidden by the legend. */
@@ -107,7 +105,6 @@ export function Chart({
   ticks: fixedTicks,
   format,
   unit,
-  area = false,
   hours,
   hidden,
   onToggle,
@@ -185,15 +182,6 @@ export function Chart({
             onPointerLeave={() => setAt(null)}
             style={{ touchAction: "none" }}
           >
-            <defs>
-              {shown.map((s) => (
-                <linearGradient key={s.id} id={`fill-${s.id}`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={s.color} stopOpacity="0.42" />
-                  <stop offset="100%" stopColor={s.color} stopOpacity="0.02" />
-                </linearGradient>
-              ))}
-            </defs>
-
             {/* The recessed plot area, with the grid burned into it. */}
             <rect
               x={pad.l}
@@ -231,16 +219,6 @@ export function Chart({
 
             {/* Bands first, so a median line sits on top of its own spread. */}
             {shown.map((s) => (s.band ? <g key={`b-${s.id}`}>{bandPath(s.band, x, y)}</g> : null))}
-
-            {area &&
-              shown.map((s) => (
-                <path
-                  key={`a-${s.id}`}
-                  d={areaPath(s.values, x, y, pad.t + plot)}
-                  fill={`url(#fill-${s.id})`}
-                  stroke="none"
-                />
-              ))}
 
             {shown.map((s) => (
               <g key={s.id}>
@@ -321,23 +299,6 @@ export function Chart({
       )}
     </div>
   )
-}
-
-/** The area under a single series, closed along the baseline. */
-function areaPath(values: (number | null)[], x: (i: number) => number, y: (v: number) => number, base: number) {
-  const points: string[] = []
-  let started = false
-  values.forEach((v, i) => {
-    if (v === null || !Number.isFinite(v)) return
-    if (!started) {
-      points.push(`M${x(i).toFixed(2)} ${base}`)
-      started = true
-    }
-    points.push(`L${x(i).toFixed(2)} ${y(v).toFixed(2)}`)
-  })
-  if (points.length < 2) return ""
-  const last = values.length - 1
-  return `${points.join(" ")} L${x(last).toFixed(2)} ${base} L${x(0).toFixed(2)} ${base} Z`
 }
 
 /** The min-max span of a bucket's samples, as a filled ribbon. */

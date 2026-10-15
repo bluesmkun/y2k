@@ -52,11 +52,11 @@ function quiet(node: Node): string {
 
 /**
  * The three-network latency line on a card. The node list carries no latency, so
- * this reads its own node's ping rows (see `@/lib/latency` for the caching and
- * the concurrency cap) and shows one figure per probe, coloured by how good the
- * number is. Before the first answer -- and on a node that is not reporting --
- * the probes are not invented: the plate shows a quiet placeholder instead, so a
- * missing measurement never reads as a bad one.
+ * this reads its own node's ping rows (see `@/lib/latency` for the caching, the
+ * concurrency cap, and the probe-to-carrier folding) and shows one figure per
+ * carrier, coloured by how good the number is. Before the first answer -- and on
+ * a node that is not reporting -- the carriers are not invented: the plate shows
+ * a quiet placeholder instead, so a missing measurement never reads as a bad one.
  */
 function LatencyPlate({ id, enabled }: { id: number; enabled: boolean }) {
   const rows = useLatency(id, enabled)
@@ -86,15 +86,18 @@ function LatencyPlate({ id, enabled }: { id: number; enabled: boolean }) {
   }
 
   return (
-    /* 三个探针各占一格，编号贴右缘、数值贴左缘。flex 三等分会让名字长度
-       不同的两行错位；grid 的列是固定的，每一行的 Name 和 ms 都落在同
-       一条竖线上。 */
+    /* 每一格是一个运营商，按电信/联通/移动的固定顺序排列。一个运营商可能对应
+       多个探针（电信V4、电信V6、电信 CN2），它们的延迟与丢包在这里已经合成
+       一个数（见 lib/latency）。列宽固定，所以三格里哪一格有没有数据，名字
+       和数值都落在同一条竖线上。 */
     <div className="plate probes">
-      {rows.map((row, i) => (
-        <span key={row.id} style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
-          {i > 0 && <span className="sep">|</span>}
+      {rows.map((row) => (
+        <span key={row.id} style={{ display: "inline-flex", alignItems: "baseline", gap: 5 }}>
           <span className="faint">{row.name}</span>
           <span style={{ color: latencyTone(row.ms) }}>{row.ms === null ? "超时" : `${row.ms.toFixed(0)}ms`}</span>
+          {/* 丢包只在真有丢包时出现：一行里塞两个数字会把三格的宽度咬掉一块，
+             而丢包为 0 是常态，报出来是噪音。 */}
+          {(row.loss ?? 0) > 0 && <span className="faint" title={`丢包 ${row.loss!.toFixed(2)}%`}>↓{row.loss!.toFixed(0)}%</span>}
         </span>
       ))}
     </div>
@@ -141,6 +144,11 @@ export function NodeCard({ node, onOpen }: { node: Node; onOpen: (id: number) =>
         />
         <span className="name" title={node.name}>
           {node.name}
+        </span>
+        {/* 状态也是一个徽标，不只是左侧那一颗灯。列表要一眼扫出哪几台掉了，
+            而一颗 8px 的灯在满屏卡片里并不显眼；文字写出来才扫得动。 */}
+        <span className="badge" data-tone={node.broken ? "bad" : !node.online ? "bad" : live ? "ok" : "warn"}>
+          {node.broken ? "上报异常" : !node.online ? "离线" : live ? "在线" : "等待上报"}
         </span>
         {showFlags && <Country code={node.country} />}
       </div>

@@ -619,6 +619,18 @@ a.btn {
   overflow: hidden;
 }
 
+/* Phone: two columns, so the four tiles sit as a 2x2 square. `auto-fit` with a
+   150px floor would give two columns on a 400px screen too, but only after the
+   four have already folded into a single column on anything narrower than
+   320px -- and a row of four stacked tiles pushes the node list below the fold
+   on a phone, which is the one place it must not be. The explicit pair of
+   columns keeps the square whatever the width. */
+@media (max-width: 680px) {
+  .summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 .stat .k {
   font-family: var(--font-data);
   font-size: 10px;
@@ -743,8 +755,27 @@ a.btn {
     0 14px 32px rgba(0, 0, 0, 0.55);
 }
 
+/* An offline card is dimmed rather than hidden. It keeps its place in the grid
+   -- there is no reflow, and the node does not appear to have been removed --
+   but everything inside drops to the faint tint, so a scan of the page finds the
+   live nodes first without having to read a single label. The saturation cut is
+   what makes the state read at arm's length; the tint is what makes it read up
+   close. */
 .card[data-offline="true"] {
-  filter: saturate(0.5);
+  filter: saturate(0.42) brightness(0.82);
+  border-color: var(--edge-lo);
+}
+
+.card[data-offline="true"] .name {
+  color: var(--ink-dim);
+}
+
+/* A card that is online but has not reported yet is not dimmed -- the agent is
+   up and reachable, and greying it would say otherwise. */
+.card[data-offline="true"] .plate,
+.card[data-offline="true"] .meter .val,
+.card[data-offline="true"] .card-foot {
+  color: var(--ink-faint);
 }
 
 .card-head {
@@ -820,6 +851,12 @@ a.btn {
   color: var(--ink-faint);
 }
 
+/* Node cards carry a status lamp in the head and nothing in the body, so the
+   offline state has to be legible from the body too -- a card that only greys
+   its head reads as "loading" rather than "down". The body keeps its rows so
+   the card does not shrink, but each value is dimmed to the faint tint and the
+   last reading is labelled, because a stale number shown at full strength is a
+   lie about the present. */
 /* A plate that is two half-width items: a direction pair, a probe name and its
    reading. Two equal columns, each edge-aligned, so the two halves line up
    whatever the font does to their widths. */
@@ -837,21 +874,17 @@ a.btn {
   justify-self: end;
 }
 
-/* The three-network latency row on a card: three equal cells, each holding a
-   probe's name and its reading. Equal columns keep every row aligned even
-   though probe names have different lengths. */
+/* The three-network latency row on a card: one equal cell per carrier, each
+   holding the carrier's name and its reading. The columns are equal on purpose
+   -- the cells are centred in them -- so 电信/联通/移动 land on the same three x
+   positions on every card in the list, instead of drifting with the width of the
+   number next to each name. */
 .plate.probes {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   align-items: baseline;
   justify-items: center;
   column-gap: 4px;
-}
-
-/* Fewer than three probes (a node with one or two tasks) still fills the row
-   evenly instead of bunching the last cell against the middle. */
-.plate.probes > :only-child {
-  grid-column: 1 / -1;
 }
 
 .remark {
@@ -1088,9 +1121,12 @@ table.nodes .trough {
   overflow-wrap: anywhere;
 }
 
+/* One grid for every chart on the detail page, so the latency panel and the
+   resource panels are the same instrument rather than two. 460px per column
+   puts two side by side on a desktop and one per row on a phone. */
 .charts {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr));
   gap: 14px;
 }
 

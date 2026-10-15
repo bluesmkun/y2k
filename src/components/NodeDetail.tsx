@@ -329,6 +329,7 @@ export function NodeDetail({ node, onBack, hidePing = false }: { node: Node; onB
         <div className="charts">
           <Panel title="CPU 占用" note={uptimeRate !== null ? `在线率 ${uptimeRate.toFixed(0)}%` : undefined}>
             <Chart
+              height={230}
               rows={rows}
               hours={hours}
               top={axes.cpu}
@@ -342,28 +343,29 @@ export function NodeDetail({ node, onBack, hidePing = false }: { node: Node; onB
 
           <Panel title="内存占用">
             <Chart
+              height={230}
               rows={rows}
               hours={hours}
               top={node.mem_total > 0 ? node.mem_total : bytesTop(maxOf(data?.metrics ?? [], (p) => p.mem_used), 1)}
               format={axisBytes}
-              area
               series={[{ id: "mem", name: "已用", color: "#7b6cff", values: numeric("mem_used") }]}
             />
           </Panel>
 
           <Panel title="硬盘占用">
             <Chart
+              height={230}
               rows={rows}
               hours={hours}
               top={node.disk_total > 0 ? node.disk_total : bytesTop(maxOf(data?.metrics ?? [], (p) => p.disk_used), 1)}
               format={axisBytes}
-              area
               series={[{ id: "disk", name: "已用", color: "#ffc44d", values: numeric("disk_used") }]}
             />
           </Panel>
 
           <Panel title="网络速率">
             <Chart
+              height={230}
               rows={rows}
               hours={hours}
               domain={axes.rate.domain}
