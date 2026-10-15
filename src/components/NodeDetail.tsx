@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react"
 import { api, type Node } from "@/lib/api"
 import {
   axisBytes, axisTop, bytes, bytesTop, cpuName, cycle, daysUntil, despike, despikeWindow, FOREVER, money,
+  movingAverage,
   osName, percent, quarters, rate, RATE_FLOOR, rateAxis, trafficMode, uptime, windows, withGaps,
 } from "@/lib/format"
 import { useTheme } from "@/lib/theme"
@@ -55,11 +56,16 @@ export function NodeDetail({ node, onBack, hidePing = false }: { node: Node; onB
   const [hours, setHours] = useState(() => (ranges.some((r) => r.hours === 6) ? 6 : ranges[0].hours))
   const [data, setData] = useState<Answer | null>(null)
   const [failed, setFailed] = useState("")
-  const [hidden, setHidden] = useState<Set<string>>(new Set())
-  // `null` is "every probe". A probe picked here is shown alone -- the chart
-  // draws one line instead of eight, which is the only way to read a single
-  // network on a page where the others are still answering.
-  const [solo, setSolo] = useState<string | null>(null)
+  // The two filters the latency chart offers, on by default: they are what makes
+  // a probe's own spike readable next to a network that answers in 2 ms.
+  const [smooth, setSmooth] = useState(true)
+  const [despiked, setDespiked] = useState(true)
+  // Hiding probes, rather than soloing one. The panel orders latency charts per
+  // probe and there are often three; soloing answers "which one is it" but not
+  // "these two together, without that one", which is the question when one of
+  // three networks is the problem. Clicking a probe's name or its legend row
+  // takes it out; clicking it back puts it in.
+  const [hidden, setHidden] = useState<Set<string>>(() => new Set())
 
   // Hiding the latency tab hides the chart, not the route: the resources are
   // still worth reading, and hiding the whole page would make a shared link to
@@ -154,9 +160,20 @@ export function NodeDetail({ node, onBack, hidePing = false }: { node: Node; onB
         const window = despikeWindow(own)
         // Timeouts are retained: dropping them would draw a probe losing half its
         // packets as an unbroken line, and one that never answered not at all.
-        const smoothed = despike(own.map((p) => p.latency), window)
-        const lo = despike(own.map((p) => p.band?.[0] ?? p.latency), window)
-        const hi = despike(own.map((p) => p.band?.[1] ?? p.latency), window)
+        // The two filters are applied to the raw readings, independently: the
+        // spike filter replaces an outlier with the local median (so a probe
+        // that answered 4 000 ms once does not set the whole axis), while the
+        // smoother averages over a window of neighbours (so a genuine slow
+        // period keeps its height, since its neighbours are slow too).
+        const raw = own.map((p) => p.latency)
+        const flat = despiked ? despike(raw, window) : raw
+        const smoothed = smooth ? movingAverage(flat, window) : flat
+        const loRaw = own.map((p) => p.band?.[0] ?? p.latency)
+        const hiRaw = own.map((p) => p.band?.[1] ?? p.latency)
+        const lo0 = despiked ? despike(loRaw, window) : loRaw
+        const hi0 = despiked ? despike(hiRaw, window) : hiRaw
+        const lo = smooth ? movingAverage(lo0, window) : lo0
+        const hi = smooth ? movingAverage(hi0, window) : hi0
         own.forEach((p, i) => {
           const i2 = at.get(p.ts)!
           values[i2] = smoothed[i]
@@ -179,7 +196,7 @@ export function NodeDetail({ node, onBack, hidePing = false }: { node: Node; onB
         }
       })
       .filter((s) => s.values.some((v) => v !== null))
-  }, [data])
+  }, [data, smooth, despiked])
 
   const pingRows = useMemo(() => {
     const samples = data?.ping ?? []
@@ -187,9 +204,11 @@ export function NodeDetail({ node, onBack, hidePing = false }: { node: Node; onB
     return stamps.map((ts) => ({ ts: ts * 1_000 }))
   }, [data])
 
-  // The series the chart actually draws: one probe when one is soloed, all of
-  // them otherwise.
-  const drawn = useMemo(() => (solo === null ? ping : ping.filter((s) => s.id === solo)), [ping, solo])
+  // The probes the chart actually draws: every one except those the visitor took
+  // out. Hiding is not the same as soloing -- the axis covers what is left, so
+  // two quiet networks next to a noisy one stop being flattened by it.
+  const shown = useMemo(() => ping.filter((s) => !hidden.has(s.id)), [ping, hidden])
+  const drawn = shown
 
   const latencyTop = useMemo(() => {
     let hi = 0
@@ -197,7 +216,7 @@ export function NodeDetail({ node, onBack, hidePing = false }: { node: Node; onB
     return axisTop(hi, 50, 100_000)
   }, [drawn])
 
-  const latencySeries: Series[] = ping.map((s, i) => ({
+  const latencySeries: Series[] = shown.map((s, i) => ({
     id: s.id,
     name: s.name,
     color: PALETTE[i % PALETTE.length],
@@ -205,11 +224,16 @@ export function NodeDetail({ node, onBack, hidePing = false }: { node: Node; onB
     band: s.bands,
   }))
 
-  // A probe that stopped answering in the selected window has no series left;
-  // staying soloed on it would leave the chart blank with no way back.
+  // A probe that stopped answering in the selected window has no series; a
+  // hide left over on it would keep the chart from ever showing it again.
   useEffect(() => {
-    if (solo !== null && !ping.some((s) => s.id === solo)) setSolo(null)
-  }, [ping, solo])
+    if (!hidden.size) return
+    const alive = new Set(ping.map((s) => s.id))
+    setHidden((prev) => {
+      const next = new Set([...prev].filter((id) => alive.has(id)))
+      return next.size === prev.size ? prev : next
+    })
+  }, [ping, hidden])
 
   const uptimeRate = useMemo(() => {
     const list = data?.metrics ?? []
@@ -357,12 +381,26 @@ export function NodeDetail({ node, onBack, hidePing = false }: { node: Node; onB
       ) : (
         <div className="charts">
           <Panel title="网络延迟" note="毫秒，越短越好">
-            {/* One button per probe, plus the catch-all. Choosing one draws it
-                alone, which is the only way to read a single network when eight
-                lines share an axis; 全部 puts them back. */}
+            {/* Filters first, then the probes. The two filters are the only two
+                things this chart offers that the resource charts do not: a
+                probe's raw samples are noisy enough that the shape of a network
+                is unreadable until one or both are on. */}
+            <div className="tabs" style={{ marginBottom: 8 }}>
+              <button type="button" className="tab" data-on={smooth ? "true" : undefined} onClick={() => setSmooth((v) => !v)}>
+                平滑
+              </button>
+              <button type="button" className="tab" data-on={despiked ? "true" : undefined} onClick={() => setDespiked((v) => !v)}>
+                削峰
+              </button>
+            </div>
+
+            {/* One toggle per probe. 全部 puts every one back; a probe that is
+                drawn is named; clicking the name takes it out of the chart, and
+                the axis then covers only what is left. The loss figure rides
+                along because it is the one thing the line itself cannot show. */}
             {ping.length > 1 && (
               <div className="tabs" style={{ marginBottom: 8 }}>
-                <button type="button" className="tab" data-on={solo === null ? "true" : undefined} onClick={() => setSolo(null)}>
+                <button type="button" className="tab" data-on={hidden.size === 0 ? "true" : undefined} onClick={() => setHidden(new Set())}>
                   全部
                 </button>
                 {ping.map((s) => (
@@ -370,8 +408,15 @@ export function NodeDetail({ node, onBack, hidePing = false }: { node: Node; onB
                     key={s.id}
                     type="button"
                     className="tab"
-                    data-on={solo === s.id ? "true" : undefined}
-                    onClick={() => setSolo(solo === s.id ? null : s.id)}
+                    data-on={hidden.has(s.id) ? undefined : "true"}
+                    onClick={() =>
+                      setHidden((prev) => {
+                        const next = new Set(prev)
+                        if (next.has(s.id)) next.delete(s.id)
+                        else next.add(s.id)
+                        return next
+                      })
+                    }
                   >
                     <span
                       aria-hidden="true"
@@ -383,27 +428,33 @@ export function NodeDetail({ node, onBack, hidePing = false }: { node: Node; onB
                 ))}
               </div>
             )}
-            <Chart
-              rows={pingRows}
-              hours={hours}
-              height={230}
-              top={latencyTop}
-              format={(n) => `${n.toFixed(0)} ms`}
-              hidden={hidden}
-              onToggle={(id) =>
-                setHidden((prev) => {
-                  const next = new Set(prev)
-                  if (next.has(id)) next.delete(id)
-                  else next.add(id)
-                  return next
-                })
-              }
-              note={(id) => {
-                const lost = ping.find((s) => s.id === id)?.loss ?? 0
-                return lost > 0 ? `丢包 ${lost.toFixed(2)}%` : null
-              }}
-              series={solo === null ? latencySeries : latencySeries.filter((s) => s.id === solo)}
-            />
+
+            {shown.length === 0 ? (
+              <div className="empty">所有探针都已隐藏，点上面的探针名或「全部」恢复</div>
+            ) : (
+              <Chart
+                rows={pingRows}
+                hours={hours}
+                height={230}
+                top={latencyTop}
+                format={(n) => `${n.toFixed(0)} ms`}
+                hidden={hidden}
+                onToggle={(id) =>
+                  setHidden((prev) => {
+                    const next = new Set(prev)
+                    if (next.has(id)) next.delete(id)
+                    else next.add(id)
+                    return next
+                  })
+                }
+                note={(id) => {
+                  const lost = ping.find((s) => s.id === id)?.loss ?? 0
+                  return lost > 0 ? `丢包 ${lost.toFixed(2)}%` : null
+                }}
+                noLegend
+                series={latencySeries}
+              />
+            )}
           </Panel>
         </div>
       )}

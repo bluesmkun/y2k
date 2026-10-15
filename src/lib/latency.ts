@@ -33,6 +33,14 @@ const MAX = 4
 /** How many of the newest answers are averaged. One sample is a spike. */
 const SMOOTH = 5
 
+/**
+ * How many probes a card shows. A node can carry a dozen probes and the card
+ * has room for a line of three; the rest are the detail page's job. The order is
+ * the response's own -- first occurrence of each task_id -- so what a card
+ * shows is what the hub put first, not an arbitrary pick.
+ */
+export const CARD_PROBES = 3
+
 const cache = new Map<number, { at: number; rows: Latency }>()
 const inflight = new Map<number, Promise<Latency>>()
 let active = 0
@@ -67,7 +75,7 @@ async function read(id: number): Promise<Latency> {
     }
     const ms = recent.length ? recent.reduce((sum, v) => sum + v, 0) / recent.length : null
     return { id: task, name: probes[task] ?? `探测 ${task}`, ms }
-  })
+  }).slice(0, CARD_PROBES)
 }
 
 function load(id: number): Promise<Latency> {

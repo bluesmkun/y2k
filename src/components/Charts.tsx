@@ -90,6 +90,12 @@ type Props = {
   onToggle?: (id: string) => void
   /** Latency charts carry a per-probe loss figure in the legend. */
   note?: (id: string) => string | null
+  /**
+   * Drop the legend below the plot. Used where the same information sits above
+   * the chart in buttons, so a second copy under the axes is just noise -- and
+   * the one under the axes cannot be seen from a tall chart without scrolling.
+   */
+  noLegend?: boolean
 }
 
 export function Chart({
@@ -106,6 +112,7 @@ export function Chart({
   hidden,
   onToggle,
   note,
+  noLegend = false,
 }: Props) {
   const [ref, width] = useWidth<HTMLDivElement>()
   const [at, setAt] = useState<number | null>(null)
@@ -296,7 +303,7 @@ export function Chart({
         )}
       </div>
 
-      {series.length > 1 && (
+      {!noLegend && series.length > 1 && (
         <div className="legend">
           {series.map((s) => (
             <button
@@ -347,34 +354,9 @@ function bandPath(band: ([number, number] | null)[], x: (i: number) => number, y
 }
 
 /**
- * A tile's sparkline: no axes, no readout, just the shape of the last minute of
- * samples. `values` are already in display units.
- */
-/**
- * Two series sharing one scale, for a tile that shows a direction pair on a
+ * Two series sharing one scale, for a panel that shows a direction pair on a
  * single plot. A shared top is the whole point: two separate sparklines each
  * normalised to their own maximum make 2 MB/s up look as busy as 200 MB/s down.
  * The fill is dropped here -- two translucent areas overlap into a third colour
  * that means nothing.
  */
-export function Spark2({ a, b, colorA, colorB, height = 26 }: { a: number[]; b: number[]; colorA: string; colorB: string; height?: number }) {
-  const [ref, width] = useWidth<HTMLDivElement>()
-  const count = Math.max(a.length, b.length)
-  if (count < 2) return <div ref={ref} style={{ height }} />
-  const hi = Math.max(...a, ...b, 1e-9)
-  const w = Math.max(width, 1)
-  const x = (i: number) => (i / (count - 1)) * w
-  const y = (v: number) => height - 3 - (v / hi) * (height - 7)
-  const line = (values: number[]) =>
-    values.map((v, i) => `${i ? "L" : "M"}${x(i).toFixed(1)} ${y(v).toFixed(1)}`).join(" ")
-  return (
-    <div ref={ref} style={{ height }}>
-      {width > 0 && (
-        <svg width={w} height={height} aria-hidden="true">
-          {a.length > 1 && <path d={line(a)} fill="none" stroke={colorA} strokeWidth="1.4" />}
-          {b.length > 1 && <path d={line(b)} fill="none" stroke={colorB} strokeWidth="1.4" />}
-        </svg>
-      )}
-    </div>
-  )
-}

@@ -186,7 +186,7 @@ export function App() {
             <div className="empty">这台 hub 上还没有公开的节点</div>
           ) : (
             <>
-              {showSummary && <Summary nodes={shown} group={tab} />}
+              {showSummary && <Summary nodes={shown} />}
 
               {showGroups && tabs.length > 1 && (
                 <div className="tabs">

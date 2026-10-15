@@ -636,6 +636,20 @@ a.btn {
   text-shadow: 0 0 10px color-mix(in srgb, var(--accent) 45%, transparent);
 }
 
+/* A value that is two numbers, not one phrase. Pushing them to the two edges
+   with a two-column grid keeps them aligned whatever the font: ↓ and ↑ are
+   not the same width, and spacing them with `&nbsp;` drifts the moment the
+   font, size, or locale changes. */
+.stat .v.pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: baseline;
+}
+
+.stat .v.pair > :last-child {
+  text-align: right;
+}
+
 .stat .sub {
   font-size: 11px;
   color: var(--ink-dim);
@@ -804,6 +818,40 @@ a.btn {
 
 .plate .sep {
   color: var(--ink-faint);
+}
+
+/* A plate that is two half-width items: a direction pair, a probe name and its
+   reading. Two equal columns, each edge-aligned, so the two halves line up
+   whatever the font does to their widths. */
+.plate.pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: baseline;
+}
+
+.plate.pair > :first-child {
+  justify-self: start;
+}
+
+.plate.pair > :last-child {
+  justify-self: end;
+}
+
+/* The three-network latency row on a card: three equal cells, each holding a
+   probe's name and its reading. Equal columns keep every row aligned even
+   though probe names have different lengths. */
+.plate.probes {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  align-items: baseline;
+  justify-items: center;
+  column-gap: 4px;
+}
+
+/* Fewer than three probes (a node with one or two tasks) still fills the row
+   evenly instead of bunching the last cell against the middle. */
+.plate.probes > :only-child {
+  grid-column: 1 / -1;
 }
 
 .remark {

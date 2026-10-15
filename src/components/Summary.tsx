@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react"
 
 import { bytes, dueThisMonth, money, monthUsage, monthlyCost, percent, rate } from "@/lib/format"
-import { speedHistory, type Node } from "@/lib/api"
+import { type Node } from "@/lib/api"
 import { rate as convert, DEFAULT_RATE_URL, useRates, type Rates } from "@/lib/rates"
 import { useText, useFlag } from "@/lib/theme"
-import { Spark2 } from "@/components/Charts"
 
 /**
  * The tiles above the grid.
@@ -21,7 +20,12 @@ import { Spark2 } from "@/components/Charts"
  * rate for the pair exists; otherwise the original is shown, because a wrong
  * number is worse than a foreign one.
  */
-export function Summary({ nodes, group }: { nodes: Node[]; group: string | null }) {
+
+// The tick is what kept the sparkline moving before the sparkline went. It also
+// still does something real: the tiles read quantities that the socket mutates
+// outside React, and without a slow re-render a fleet that changes state would
+// keep yesterday's figures on screen until something else moved.
+export function Summary({ nodes }: { nodes: Node[] }) {
   const [, tick] = useState(0)
 
   const currency = useText("currency", "")
@@ -51,10 +55,6 @@ export function Summary({ nodes, group }: { nodes: Node[]; group: string | null 
   const down = live.reduce((sum, n) => sum + (n.metrics?.net_rx ?? 0), 0)
   const up = live.reduce((sum, n) => sum + (n.metrics?.net_tx ?? 0), 0)
 
-  const series = speedHistory.get(group) ?? []
-  const rxSpark = series.map((s) => s.rx)
-  const txSpark = series.map((s) => s.tx)
-
   const paid = nodes.filter((n) => n.price > 0)
   const monthly = paid.reduce((sum, n) => sum + monthlyCost(n), 0)
   const due = paid.reduce((sum, n) => sum + (dueThisMonth(n.expires_at) ? n.price : 0), 0)
@@ -81,17 +81,15 @@ export function Summary({ nodes, group }: { nodes: Node[]; group: string | null 
         </div>
       </div>
 
+      {/* 上下行两端对齐：一个 2 列的 grid，左边贴卡片左缘、右边贴右缘。
+          比文字两端填空格的写法稳，因为空格宽度随字体变、字号一改就歪。 */}
       <div className="stat panel">
         <div className="k">实时网速</div>
-        <div className="v">
+        <div className="v pair">
           <span style={{ color: "var(--ok)" }}>↓ {rate(down)}</span>
-          <span className="faint" style={{ margin: "0 6px" }}>
-            ·
-          </span>
           <span style={{ color: "var(--accent)" }}>↑ {rate(up)}</span>
         </div>
         <div className="sub">实时合计</div>
-        <Spark2 a={rxSpark} b={txSpark} colorA="var(--ok)" colorB="var(--accent)" />
       </div>
 
       {/* 显示价格与到期 also governs the cost tile: an operator who hides the
@@ -184,14 +182,29 @@ function Cost({
     )
   }
 
+  // 只留两个数：总费用（每月合计）与本月费用（本月到期）。三级副标题
+  // 「每月合计 · 本月到期 ¥x · N 个无汇率」在小卡片上折成两行，而且
+  // 无汇率条是排查用的，不是访客要看的。保留缺失提示的口径改为主数字
+  // 后跟一个省略号徽标，仍能发现问题但不占版面。
+  const monthlyText = sum(converted?.monthly ?? monthly)
+  const dueText = sum(converted?.due ?? due)
+  const missing = show && converted ? converted.missing : 0
+
   return (
     <div className="stat panel">
       <div className="k">费用</div>
-      <div className="v">{sum(converted?.monthly ?? monthly)}</div>
+      <div className="v">
+        {monthlyText}
+        {missing > 0 && (
+          <span className="faint" title={`${missing} 个节点没有可用汇率，未计入合计`}>
+            {" "}
+            +{missing}
+          </span>
+        )}
+      </div>
       <div className="sub">
-        每月合计
-        <span className="faint"> · 本月到期 {sum(converted?.due ?? due)}</span>
-        {show && converted && converted.missing > 0 && <span className="faint"> · {converted.missing} 个无汇率</span>}
+        <span>总费用</span>
+        <span className="faint"> · 本月 {dueText}</span>
       </div>
     </div>
   )

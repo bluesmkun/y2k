@@ -86,7 +86,10 @@ function LatencyPlate({ id, enabled }: { id: number; enabled: boolean }) {
   }
 
   return (
-    <div className="plate">
+    /* 三个探针各占一格，编号贴右缘、数值贴左缘。flex 三等分会让名字长度
+       不同的两行错位；grid 的列是固定的，每一行的 Name 和 ms 都落在同
+       一条竖线上。 */
+    <div className="plate probes">
       {rows.map((row, i) => (
         <span key={row.id} style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
           {i > 0 && <span className="sep">|</span>}
@@ -162,9 +165,10 @@ export function NodeCard({ node, onOpen }: { node: Node; onOpen: (id: number) =>
           <Meter label="内存" value={percent(m.mem_used, m.mem_total)} detail={pair(m.mem_used, m.mem_total)} />
           <Meter label="硬盘" value={percent(m.disk_used, m.disk_total)} detail={pair(m.disk_used, m.disk_total)} />
           {showNet && (
-            <div className="plate">
+            /* 两端对齐：同一个 pair，左右各占一半。卡片窄时中间的空隙是
+               唯一能把 ↓ 和 ↑ 分开又对得很齐的办法。 */
+            <div className="plate pair">
               <span style={{ color: "var(--ok)" }}>↓ {rate(m.net_rx)}</span>
-              <span className="sep">|</span>
               <span style={{ color: "var(--accent)" }}>↑ {rate(m.net_tx)}</span>
             </div>
           )}
@@ -202,13 +206,16 @@ export function NodeCard({ node, onOpen }: { node: Node; onOpen: (id: number) =>
 
       <div className="card-foot">
         <span title="运行时长">运行 {live ? uptime(m.uptime) : "—"}</span>
-        {showPrice && (node.price > 0 || days !== null) && (
+        {showPrice && (node.price > 0 || expires !== undefined) && (
           <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>
             {node.price > 0 && <span>{money(node.price, node.currency)}</span>}
             {node.billing_cycle && <span className="faint">{cycle(node.billing_cycle)}</span>}
-            {days !== null && (
-              <span className="badge" data-tone={expiryTone}>
-                {days < 0 ? `已过期 ${-days} 天` : days === 0 ? "今天到期" : `剩 ${days} 天`}
+            {/* 无限期要单独占一个徽标：`expires_in` 为 null 是「没有到期日」，
+                而不是「不知道」。只画有期限的节点会让免费节点和永久节点
+                在页面上长得一样，看不出要不要续。 */}
+            {expires !== undefined && (
+              <span className="badge" data-tone={expiryTone ?? "ok"}>
+                {days === null ? "无限期" : days < 0 ? `已过期 ${-days} 天` : days === 0 ? "今天到期" : `剩 ${days} 天`}
               </span>
             )}
           </span>

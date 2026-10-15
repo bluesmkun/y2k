@@ -417,6 +417,33 @@ function median(values: number[]): number {
 }
 
 /**
+ * A trailing rolling mean over the nearest `window` samples that have values,
+ * truncated at the ends so the first and last readings survive.
+ *
+ * This is the smoothing half of the pair; the spike filter above decides which
+ * samples count as neighbours, and this one decides what a sample is worth next
+ * to them. Unlike the filter it moves a genuine slow period rather than
+ * clipping it: a minute that really did take 300 ms has slow neighbours and a
+ * slow average, where a one-sample jump into 4 000 ms does not survive either.
+ *
+ * Nulls are skipped rather than counted as zero: a probe that timed out for a
+ * few samples must not drag its neighbours towards zero, which would draw a
+ * connection failure as a fast network.
+ */
+export function movingAverage(values: (number | null)[], window = 7): (number | null)[] {
+  const half = window >> 1
+  return values.map((v, i) => {
+    if (v === null) return v
+    const near: number[] = []
+    for (let j = Math.max(0, i - half); j <= Math.min(values.length - 1, i + half); j += 1) {
+      const n = values[j]
+      if (n !== null && Number.isFinite(n)) near.push(n)
+    }
+    return near.length ? near.reduce((sum, n) => sum + n, 0) / near.length : v
+  })
+}
+
+/**
  * How many samples of a probe's own series make up seven minutes of neighbours,
  * forced odd so the filter has a centre sample.
  */
